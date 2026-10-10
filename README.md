@@ -1,0 +1,74 @@
+# Explainable AI for Diabetic Retinopathy Screening in Rural India
+
+An early-stage, research-oriented project to explore how AI can support diabetic retinopathy (DR) screening and referral workflows in settings with limited access to ophthalmologists. This repository currently contains the project foundation only; it does not contain a trained model, clinical results, or a screening application.
+
+## The real-world problem
+
+Diabetic retinopathy can threaten sight when it is not identified and referred for care in time. Screening programs face practical constraints, especially in rural and underserved communities:
+
+- Fundus photographs may be blurred, poorly illuminated, or otherwise unsuitable for assessment.
+- Specialist ophthalmologists are not consistently available where screening takes place.
+- A prediction without understandable evidence can be difficult for clinicians to assess and trust.
+- Screening tools must fit telemedicine workflows and be designed for reliable operation at scale.
+
+## Proposed solution
+
+The intended system is an AI-assisted screening and referral-support platform. A future workflow may assess whether an image is suitable, analyze retinal findings, estimate DR severity, and present interpretable evidence with a review-oriented report. It is intended to support—not replace—qualified clinical judgment. Any future components will need appropriate technical, clinical, privacy, and deployment evaluation before use with patients.
+
+## Major system modules
+
+| Module | Intended responsibility |
+| --- | --- |
+| Preprocessing | Prepare fundus images consistently while retaining traceability to the input. |
+| Image quality assessment | Identify images that may be unsuitable for automated analysis and support a recapture or human-review pathway. |
+| DR classification | Explore severity estimation as a research component; no classifier is implemented yet. |
+| Explainable AI | Present model evidence in a way that can be inspected, with limitations clearly stated. |
+| Lesion and retinal analysis | Explore analysis of clinically relevant retinal structures and lesions. |
+| Reporting | Organize analysis outputs for review and referral support without presenting them as a diagnosis. |
+| Utilities | Hold shared, non-domain-specific helpers as the project grows. |
+| Evaluation | Define reproducible technical evaluation and, later, appropriate clinical evaluation protocols. |
+| Frontend and simulation | Reserve space for future user workflows and deployment/workflow simulation. |
+
+## Intended users
+
+The intended users are screening-program staff, trained health workers, optometrists, ophthalmologists, telemedicine teams, and researchers evaluating screening and referral-support workflows. The project is not intended for self-diagnosis or unsupervised treatment decisions.
+
+## Technology stack
+
+This foundation uses Python project conventions and a plain `requirements.txt`; it intentionally has no third-party runtime dependencies yet. Candidate technologies for later, separately scoped stages include Python imaging and machine-learning libraries, model-interpretability tooling, and an API/UI framework. Specific libraries should be selected when a component is designed, rather than installed in advance without a current need.
+
+## Project architecture
+
+```text
+data/                         Dataset documentation; data is not stored in Git
+src/
+  preprocessing/               Image preparation
+  image_quality_assessment/    Image suitability research
+  dr_classification/           Future DR classification research
+  explainable_ai/              Future interpretability methods
+  lesion_retinal_analysis/     Future retinal and lesion analysis
+  reporting/                   Future review-oriented reporting
+  utils/                       Shared utilities
+models/                        Model artifact documentation; weights are not stored in Git
+evaluation/                    Evaluation plans and future evaluation code
+reports/                       Report documentation and future generated reports
+frontend/                      Reserved for a future user interface
+simulation/                    Workflow and deployment simulation
+tests/                         Automated tests
+docs/                          Project and research documentation
+```
+
+## Responsible AI and medical disclaimer
+
+This is a research and educational project, not a medical device or a clinically validated screening service. It does not diagnose diabetic retinopathy, determine treatment, or replace examination by a qualified healthcare professional. Do not use it to make decisions about an individual's care. Future work must address image-quality failures, uncertainty, explainability limits, dataset provenance and representation, privacy, security, local clinical workflows, and validation across intended populations and devices. All patient-facing use would require appropriate clinical oversight and regulatory and institutional review.
+
+## Development roadmap
+
+1. **Foundation (current):** establish repository structure and project documentation.
+2. **Data and protocol planning:** document permitted datasets, provenance, privacy, labeling assumptions, and evaluation design before handling data.
+3. **Image pipeline and quality assessment:** implement and test image handling and suitability checks.
+4. **Research models:** develop classification and retinal-analysis components with reproducible experiments.
+5. **Interpretability and reporting:** investigate evidence presentation and human review workflows.
+6. **Evaluation and integration:** assess technical performance, failure modes, generalization, and workflow needs before any deployment consideration.
+
+Each stage should be scoped, reviewed, and validated before proceeding. The current repository stops at Stage 1.

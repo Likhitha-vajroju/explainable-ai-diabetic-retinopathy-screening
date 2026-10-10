@@ -1,0 +1,74 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Secrets and local environment configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dataset contents: keep explanatory README files, not data
+data/**
+!data/**/
+!data/README.md
+!data/**/README.md
+
+# Model weights and checkpoints: keep explanatory README files only
+models/**
+!models/**/
+!models/README.md
+!models/**/README.md
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.h5
+*.keras
+*.safetensors
+
+# Generated evaluation/report artifacts
+reports/**
+!reports/**/
+!reports/README.md
+!reports/**/README.md
+evaluation/results/
+evaluation/outputs/
+
+# Experiment and notebook-generated output
+mlruns/
+wandb/
+lightning_logs/
+.ipynb_checkpoints/
+
+# Frontend dependencies/build output
+node_modules/
+frontend/dist/
+frontend/build/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
