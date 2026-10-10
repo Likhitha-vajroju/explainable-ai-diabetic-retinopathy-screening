@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Explainable AI for Diabetic Retinopathy Screening in Rural India
 
 An early-stage, research-oriented project to explore how AI can support diabetic retinopathy (DR) screening and referral workflows in settings with limited access to ophthalmologists. This repository currently contains the project foundation only; it does not contain a trained model, clinical results, or a screening application.
@@ -72,3 +73,6 @@ This is a research and educational project, not a medical device or a clinically
 6. **Evaluation and integration:** assess technical performance, failure modes, generalization, and workflow needs before any deployment consideration.
 
 Each stage should be scoped, reviewed, and validated before proceeding. The current repository stops at Stage 1.
+=======
+# explainable-ai-diabetic-retinopathy-screening
+>>>>>>> 8537cfb11bf98a4096599aafa37e8b4b12a536f7
