@@ -104,10 +104,49 @@ python -m src.dr_classification.evaluate `
 ```
 
 Use `--split validation` only for development, not final reporting. The command
-calculates loss, accuracy, macro precision, macro recall, macro F1, per-class
-metrics/support, and a five-class confusion matrix. It saves metrics JSON,
-confusion-matrix CSV, and a PNG visualization. It reports measured results
-only; no metrics are prefilled or fabricated.
+calculates loss, accuracy, macro precision, sensitivity/recall, one-vs-rest
+specificity, macro F1, per-class support and metrics, five-class one-vs-rest
+ROC-AUC, and a five-class confusion matrix. ROC-AUC is reported as undefined
+for a class when the evaluated split does not contain both positive and
+negative examples; the macro AUC averages only classes for which AUC is
+defined.
+
+Binary referable DR is defined here as levels 2/3/4, with levels 0/1
+non-referable. Sensitivity, specificity, precision, F1, and the binary
+confusion matrix group the **unchanged five-class argmax**; no model
+predictions or thresholds are altered. Binary ROC-AUC uses the sum of
+probabilities assigned to levels 2/3/4 as its continuous score. The requested
+>90% sensitivity and >85% specificity are target requirements only: evaluation
+compares actual measured values with those strict cutoffs and reports honestly
+whether each is met.
+
+Outputs include metrics JSON with ROC coordinates and train/validation/test
+class counts, a labeled confusion-matrix CSV, a four-panel PNG dashboard
+(row-normalized multiclass confusion matrix, binary confusion matrix, five
+one-vs-rest ROC curves, and referable ROC curve), and a Markdown report with
+setup, class imbalance, measured results, target status, and limitations.
+No metrics are prefilled or fabricated.
+
+## Evaluation interpretation and limitations
+
+The dataset documentation reports raw label-code definitions that have not
+been independently verified against authoritative clinical documentation,
+mixed identifiers with sample-level fallbacks, and an unknown dataset license.
+These affect interpretation, reuse, and potential leakage. Other possible
+bias sources include camera/site and acquisition differences, image quality,
+compression, disease-spectrum and demographic representation, selection bias,
+class imbalance, and label noise. Some subgroup metadata may not be available
+to measure these effects. Review the dataset audit and report's per-split class
+counts.
+
+A held-out benchmark measures only performance on that dataset split under its
+label and sampling assumptions. It is not clinical validation. Clinical
+validation additionally requires appropriately sourced and independently
+reviewed labels, representative external cohorts, pre-specified protocols,
+calibration and subgroup analysis, workflow evaluation, and clinical
+governance. Neither satisfying the >90% sensitivity / >85% specificity targets
+on this benchmark nor a high ROC-AUC alone establishes clinical safety or
+generalization.
 
 ## Infer on one image
 

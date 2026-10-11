@@ -95,10 +95,13 @@ configuration, and manual test commands.
 ## Experimental DR classification
 
 The project includes ResNet transfer-learning training, validation-based model
-selection, held-out test evaluation, confusion-matrix/training-curve outputs,
-and single-image inference. No performance results are prefilled or claimed;
-metrics are produced only by running training/evaluation on local data.
-Checkpoints and evaluation outputs are excluded from Git. See
+selection, held-out test evaluation, five-class and binary referable metrics,
+ROC-AUC, evaluation reports/plots, training curves, and single-image inference.
+The >90% sensitivity and >85% specificity values are targets, not guaranteed
+results; actual evaluation values are reported without modifying predictions.
+No performance results are prefilled or claimed; metrics are produced only by
+running training/evaluation on local data. Checkpoints and evaluation outputs
+are excluded from Git. See
 [`src/dr_classification/README.md`](src/dr_classification/README.md) for dataset
 setup, training, evaluation, inference, and limitations.
 

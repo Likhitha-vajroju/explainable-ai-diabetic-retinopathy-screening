@@ -1,4 +1,4 @@
-"""Evaluate a saved classifier on the held-out test split."""
+"""Evaluate a saved classifier on validation or held-out test data."""
 
 from __future__ import annotations
 
@@ -13,12 +13,37 @@ from torch.utils.data import DataLoader
 
 from src.dr_classification.classifier import (
     FundusClassificationDataset,
-    calculate_metrics,
     class_weights,
     load_model_checkpoint,
-    save_confusion_matrix,
     validate_split_separation,
 )
+from src.dr_classification.evaluation_metrics import evaluate_predictions
+from src.dr_classification.evaluation_reporting import (
+    build_evaluation_report,
+    save_evaluation_dashboard,
+)
+
+
+def _class_distribution(dataset: FundusClassificationDataset) -> dict[str, object]:
+    counts = dataset.class_counts(5)
+    nonzero = [count for count in counts if count > 0]
+    return {
+        "counts": {str(index): count for index, count in enumerate(counts)},
+        "largest_to_smallest_nonzero_ratio": (
+            max(nonzero) / min(nonzero) if nonzero else None
+        ),
+    }
+
+
+def _checkpoint_epoch(checkpoint_path: str | Path) -> int | None:
+    try:
+        checkpoint = torch.load(
+            checkpoint_path, map_location="cpu", weights_only=True
+        )
+    except TypeError:
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    epoch = checkpoint.get("epoch") if isinstance(checkpoint, dict) else None
+    return int(epoch) if epoch is not None else None
 
 
 def evaluate_checkpoint(
@@ -28,6 +53,8 @@ def evaluate_checkpoint(
     output_dir: str | Path,
     split: str = "test",
 ) -> dict[str, object]:
+    if split not in ("validation", "test"):
+        raise ValueError("Evaluation split must be 'validation' or 'test'.")
     model, config, device = load_model_checkpoint(checkpoint_path)
     datasets = {
         name: FundusClassificationDataset(dataset_root, split_csv, name, config)
@@ -48,7 +75,7 @@ def evaluate_checkpoint(
     )
     model.eval()
     targets: list[int] = []
-    predictions: list[int] = []
+    probability_rows: list[list[float]] = []
     criterion = torch.nn.CrossEntropyLoss(weight=loss_weights)
     total_loss = 0.0
     total_examples = 0
@@ -62,10 +89,14 @@ def evaluate_checkpoint(
             total_loss += float(loss) * batch_size
             total_examples += batch_size
             targets.extend(labels.cpu().tolist())
-            predictions.extend(logits.argmax(dim=1).cpu().tolist())
+            probability_rows.extend(torch.softmax(logits, dim=1).cpu().tolist())
 
-    metrics = calculate_metrics(targets, predictions)
+    metrics = evaluate_predictions(targets, probability_rows, config.class_names)
     metrics["loss"] = total_loss / total_examples
+    metrics["loss_definition"] = (
+        "Mean weighted cross-entropy using inverse-frequency weights from train only."
+    )
+
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     metrics_path = output_path / f"{split}_metrics.json"
@@ -73,10 +104,22 @@ def evaluate_checkpoint(
         **metrics,
         "split": split,
         "checkpoint": str(Path(checkpoint_path)),
+        "checkpoint_epoch": _checkpoint_epoch(checkpoint_path),
         "performance_scope": (
             "Experimental held-out dataset results; not clinically validated."
         ),
         "class_names": list(config.class_names),
+        "dataset_split_support": {
+            name: len(split_dataset) for name, split_dataset in datasets.items()
+        },
+        "class_imbalance": {
+            name: _class_distribution(split_dataset)
+            for name, split_dataset in datasets.items()
+        },
+        "targets": {
+            "referable_sensitivity_strictly_above": 0.90,
+            "referable_specificity_strictly_above": 0.85,
+        },
     }
     metrics_path.write_text(
         json.dumps(metrics_payload, indent=2, sort_keys=True) + "\n",
@@ -89,12 +132,18 @@ def evaluate_checkpoint(
         writer.writerow(["true\\predicted", *config.class_names])
         for name, row in zip(config.class_names, matrix):
             writer.writerow([name, *row])
-    matrix_image = output_path / f"{split}_confusion_matrix.png"
-    save_confusion_matrix(matrix, config.class_names, matrix_image)
+    dashboard_path = output_path / f"{split}_evaluation_dashboard.png"
+    save_evaluation_dashboard(metrics, config.class_names, dashboard_path)
+    report_path = output_path / f"{split}_evaluation_report.md"
+    report_path.write_text(
+        build_evaluation_report(metrics_payload),
+        encoding="utf-8",
+    )
     return {
         "metrics": metrics_path,
         "confusion_matrix_csv": matrix_csv,
-        "confusion_matrix_image": matrix_image,
+        "evaluation_dashboard": dashboard_path,
+        "report": report_path,
         **metrics,
     }
 
@@ -114,7 +163,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Path,
         default=Path("data/metadata/split_metadata.csv"),
     )
-    parser.add_argument("--output-dir", type=Path, default=Path("reports/dr_classification"))
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("reports/dr_classification"),
+    )
     parser.add_argument(
         "--split",
         choices=("test", "validation"),
@@ -131,15 +184,36 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     print(f"Metrics: {result['metrics']}")
     print(f"Confusion matrix CSV: {result['confusion_matrix_csv']}")
-    print(f"Confusion matrix image: {result['confusion_matrix_image']}")
-    print(
-        "Measured metrics: "
-        + ", ".join(
-            f"{key}={result[key]:.4f}"
-            for key in ("loss", "accuracy", "precision", "recall", "f1")
-        )
+    print(f"Evaluation dashboard: {result['evaluation_dashboard']}")
+    print(f"Evaluation report: {result['report']}")
+    binary = result["binary_referable"]
+    sensitivity = binary["sensitivity"]
+    specificity = binary["specificity"]
+    sensitivity_status = (
+        "NOT EVALUABLE"
+        if sensitivity is None
+        else "MET"
+        if sensitivity > 0.90
+        else "NOT MET"
     )
-    print("Results are experimental and are not clinical validation.")
+    specificity_status = (
+        "NOT EVALUABLE"
+        if specificity is None
+        else "MET"
+        if specificity > 0.85
+        else "NOT MET"
+    )
+    print(
+        "Referable DR measured: "
+        f"sensitivity={sensitivity}, specificity={specificity}, "
+        f"precision={binary['precision']}, f1={binary['f1']}, "
+        f"roc_auc={binary['roc_auc']}"
+    )
+    print(
+        f"Targets (>90% sensitivity / >85% specificity): "
+        f"{sensitivity_status} / {specificity_status}."
+    )
+    print("Results are experimental; they are not clinical validation.")
     return 0
 
 
