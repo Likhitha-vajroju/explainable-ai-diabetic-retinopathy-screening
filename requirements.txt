@@ -1,2 +1,2 @@
-# No third-party dependencies are required for the project foundation.
-# Add a package only when an implemented component needs it.
+Pillow>=10.0
+matplotlib>=3.7

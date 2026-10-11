@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Explainable AI for Diabetic Retinopathy Screening in Rural India
 
 An early-stage, research-oriented project to explore how AI can support diabetic retinopathy (DR) screening and referral workflows in settings with limited access to ophthalmologists. This repository currently contains the project foundation only; it does not contain a trained model, clinical results, or a screening application.
@@ -36,7 +35,7 @@ The intended users are screening-program staff, trained health workers, optometr
 
 ## Technology stack
 
-This foundation uses Python project conventions and a plain `requirements.txt`; it intentionally has no third-party runtime dependencies yet. Candidate technologies for later, separately scoped stages include Python imaging and machine-learning libraries, model-interpretability tooling, and an API/UI framework. Specific libraries should be selected when a component is designed, rather than installed in advance without a current need.
+The current project uses Python with Pillow-based image processing. Candidate technologies for later, separately scoped stages include machine-learning libraries, model-interpretability tooling, and an API/UI framework. Libraries should be selected when a component is designed rather than installed in advance without a current need.
 
 ## Project architecture
 
@@ -61,18 +60,31 @@ docs/                          Project and research documentation
 
 ## Responsible AI and medical disclaimer
 
-This is a research and educational project, not a medical device or a clinically validated screening service. It does not diagnose diabetic retinopathy, determine treatment, or replace examination by a qualified healthcare professional. Do not use it to make decisions about an individual's care. Future work must address image-quality failures, uncertainty, explainability limits, dataset provenance and representation, privacy, security, local clinical workflows, and validation across intended populations and devices. All patient-facing use would require appropriate clinical oversight and regulatory and institutional review.
+This is a research and educational project, not a medical device or a clinically validated screening service. The image quality score is an engineering screening metric with configurable heuristic thresholds; neither its score nor its thresholds have been clinically validated. It does not diagnose diabetic retinopathy, determine treatment, or replace examination by a qualified healthcare professional. Do not use it to make decisions about an individual's care. Future work must address image-quality failures, uncertainty, explainability limits, dataset provenance and representation, privacy, security, local clinical workflows, and validation across intended populations and devices. All patient-facing use would require appropriate clinical oversight and regulatory and institutional review.
+
+## Image quality gate
+
+The image quality assessment module reports separate focus, illumination,
+contrast, field-of-view, and basic clipping-artifact measurements. Its
+`ACCEPTABLE`, `BORDERLINE`, or `UNGRADABLE` result is intended to prevent poor
+images from being silently forwarded into future automated analysis. A caller
+should route borderline or ungradable images for review or recapture rather
+than treat the score as a DR prediction. The configurable default thresholds
+are engineering starting points, not medical cutoffs, and require validation
+before use in any clinical workflow. See
+[`src/image_quality_assessment/README.md`](src/image_quality_assessment/README.md)
+for the method, configuration, CLI, and manual test commands.
 
 ## Development roadmap
 
-1. **Foundation (current):** establish repository structure and project documentation.
+1. **Foundation:** establish repository structure and project documentation.
 2. **Data and protocol planning:** document permitted datasets, provenance, privacy, labeling assumptions, and evaluation design before handling data.
-3. **Image pipeline and quality assessment:** implement and test image handling and suitability checks.
+3. **Image pipeline and quality assessment (in progress):** implement and test image handling and suitability checks.
 4. **Research models:** develop classification and retinal-analysis components with reproducible experiments.
 5. **Interpretability and reporting:** investigate evidence presentation and human review workflows.
 6. **Evaluation and integration:** assess technical performance, failure modes, generalization, and workflow needs before any deployment consideration.
 
-Each stage should be scoped, reviewed, and validated before proceeding. The current repository stops at Stage 1.
-=======
-# explainable-ai-diabetic-retinopathy-screening
->>>>>>> 8537cfb11bf98a4096599aafa37e8b4b12a536f7
+Each stage should be scoped, reviewed, and validated before proceeding. The
+current scope includes dataset-preparation utilities and an engineering image
+quality assessment module. It does not include DR classification, Grad-CAM, or
+a frontend.
