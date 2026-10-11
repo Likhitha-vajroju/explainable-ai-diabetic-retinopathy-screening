@@ -1,0 +1,47 @@
+{
+  "architecture": "resnet18",
+  "pretrained": true,
+  "num_classes": 5,
+  "image_size": 224,
+  "batch_size": 16,
+  "epochs": 10,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "seed": 42,
+  "num_workers": 0,
+  "device": "auto",
+  "class_to_index": {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4
+  },
+  "class_names": [
+    "No DR",
+    "Mild",
+    "Moderate",
+    "Severe",
+    "Proliferative DR"
+  ],
+  "preprocessing": {
+    "output_size": [
+      224,
+      224
+    ],
+    "preserve_aspect_ratio": true,
+    "background_mode": "black",
+    "retinal_mask_threshold": 12,
+    "normalize_illumination": true,
+    "illumination_blur_fraction": 0.08,
+    "illumination_target": 128.0,
+    "apply_clahe": true,
+    "clahe_clip_limit": 2.0,
+    "clahe_tile_grid": [
+      8,
+      8
+    ],
+    "noise_reduction_radius": 0.6,
+    "normalize_pixels": true
+  }
+}
