@@ -35,7 +35,7 @@ The intended users are screening-program staff, trained health workers, optometr
 
 ## Technology stack
 
-The current project uses Python with Pillow-based image processing. Candidate technologies for later, separately scoped stages include machine-learning libraries, model-interpretability tooling, and an API/UI framework. Libraries should be selected when a component is designed rather than installed in advance without a current need.
+The current project uses Python, Pillow, and NumPy for image handling and preprocessing. Candidate technologies for later, separately scoped stages include machine-learning libraries, model-interpretability tooling, and an API/UI framework. Libraries should be selected when a component is designed rather than installed in advance without a current need.
 
 ## Project architecture
 
@@ -75,16 +75,27 @@ before use in any clinical workflow. See
 [`src/image_quality_assessment/README.md`](src/image_quality_assessment/README.md)
 for the method, configuration, CLI, and manual test commands.
 
+## Retinal image preprocessing
+
+The preprocessing package includes a configurable, one-image pipeline for
+aspect-preserving resizing, retinal-background handling, illumination
+normalization, luminance-only CLAHE, optional noise reduction, and normalized
+pixel output. Its demo saves a separate source-image copy, enhanced image, and
+before/after comparison without overwriting existing files. These transformations
+are engineering tools only; no improvement in diagnostic accuracy is claimed.
+See [`src/preprocessing/README.md`](src/preprocessing/README.md) for rationale,
+configuration, and manual test commands.
+
 ## Development roadmap
 
 1. **Foundation:** establish repository structure and project documentation.
 2. **Data and protocol planning:** document permitted datasets, provenance, privacy, labeling assumptions, and evaluation design before handling data.
-3. **Image pipeline and quality assessment (in progress):** implement and test image handling and suitability checks.
+3. **Image pipeline and quality assessment (in progress):** implement and test image handling, enhancement, and suitability checks.
 4. **Research models:** develop classification and retinal-analysis components with reproducible experiments.
 5. **Interpretability and reporting:** investigate evidence presentation and human review workflows.
 6. **Evaluation and integration:** assess technical performance, failure modes, generalization, and workflow needs before any deployment consideration.
 
 Each stage should be scoped, reviewed, and validated before proceeding. The
-current scope includes dataset-preparation utilities and an engineering image
-quality assessment module. It does not include DR classification, Grad-CAM, or
-a frontend.
+current scope includes dataset-preparation utilities, configurable retinal
+image preprocessing, and an engineering image quality assessment module. It
+does not include DR classification, Grad-CAM, or a frontend.
