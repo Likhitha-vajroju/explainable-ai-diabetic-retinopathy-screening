@@ -46,7 +46,7 @@ src/
   image_quality_assessment/    Image suitability research
   dr_classification/           Experimental five-class transfer learning
   explainable_ai/              Grad-CAM visualizations for classifier attention
-  lesion_retinal_analysis/     Future retinal and lesion analysis
+  lesion_retinal_analysis/     Standalone vessel/disc candidates and annotation overlays
   reporting/                   Future review-oriented reporting
   utils/                       Shared utilities
 models/                        Model artifact documentation; weights are not stored in Git
