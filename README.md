@@ -35,7 +35,7 @@ The intended users are screening-program staff, trained health workers, optometr
 
 ## Technology stack
 
-The current project uses Python, Pillow, and NumPy for image handling and preprocessing, and PyTorch/torchvision for experimental transfer learning. Candidate technologies for later, separately scoped stages include model-interpretability tooling and an API/UI framework.
+The current project uses Python, Pillow, and NumPy for image handling and preprocessing, and PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations. An API/UI framework remains a candidate for a later, separately scoped stage.
 
 ## Project architecture
 
@@ -45,7 +45,7 @@ src/
   preprocessing/               Image preparation
   image_quality_assessment/    Image suitability research
   dr_classification/           Experimental five-class transfer learning
-  explainable_ai/              Future interpretability methods
+  explainable_ai/              Grad-CAM visualizations for classifier attention
   lesion_retinal_analysis/     Future retinal and lesion analysis
   reporting/                   Future review-oriented reporting
   utils/                       Shared utilities
@@ -111,10 +111,12 @@ setup, training, evaluation, inference, and limitations.
 2. **Data and protocol planning:** document permitted datasets, provenance, privacy, labeling assumptions, and evaluation design before handling data.
 3. **Image pipeline and quality assessment (in progress):** implement and test image handling, enhancement, and suitability checks.
 4. **Research models (experimental classifier implemented):** evaluate classification and retinal-analysis components with reproducible experiments.
-5. **Interpretability and reporting:** investigate evidence presentation and human review workflows.
+5. **Interpretability and reporting (Grad-CAM implemented):** investigate evidence presentation and human review workflows; Grad-CAM attention is not lesion evidence.
 6. **Evaluation and integration:** assess technical performance, failure modes, generalization, and workflow needs before any deployment consideration.
 
 Each stage should be scoped, reviewed, and validated before proceeding. The
 current scope includes dataset-preparation utilities, configurable retinal
-image preprocessing, an engineering image quality assessment module, and an
-experimental DR classifier. It does not include Grad-CAM or a frontend.
+image preprocessing, an engineering image quality assessment module, an
+experimental DR classifier, and Grad-CAM visualization. It does not include a
+frontend. Grad-CAM shows model attention and is not proof of a clinical lesion
+or a clinical diagnosis.
