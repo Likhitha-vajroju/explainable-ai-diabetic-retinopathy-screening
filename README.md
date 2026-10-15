@@ -24,7 +24,7 @@ The intended system is an AI-assisted screening and referral-support platform. A
 | DR classification | Experimental five-level transfer-learning classifier; outputs are not clinically validated. |
 | Explainable AI | Present model evidence in a way that can be inspected, with limitations clearly stated. |
 | Lesion and retinal analysis | Explore analysis of clinically relevant retinal structures and lesions. |
-| Reporting | Organize analysis outputs for review and referral support without presenting them as a diagnosis. |
+| Reporting | Combine image, classification, confidence, and visual-evidence outputs into review-oriented JSON, Markdown, and PDF reports without presenting them as a diagnosis. |
 | Utilities | Hold shared, non-domain-specific helpers as the project grows. |
 | Evaluation | Define reproducible technical evaluation and, later, appropriate clinical evaluation protocols. |
 | Frontend and simulation | Reserve space for future user workflows and deployment/workflow simulation. |
@@ -47,7 +47,7 @@ src/
   dr_classification/           Experimental five-class transfer learning
   explainable_ai/              Grad-CAM visualizations for classifier attention
   lesion_retinal_analysis/     Standalone vessel/disc candidates and annotation overlays
-  reporting/                   Future review-oriented reporting
+  reporting/                   JSON, Markdown, and PDF screening reports
   utils/                       Shared utilities
 models/                        Model artifact documentation; weights are not stored in Git
 evaluation/                    Evaluation plans and future evaluation code
@@ -122,6 +122,7 @@ Each stage should be scoped, reviewed, and validated before proceeding. The
 current scope includes dataset-preparation utilities, configurable retinal
 image preprocessing, an engineering image quality assessment module, an
 experimental DR classifier with calibration and referable screening support,
-standalone retinal candidate analysis, and Grad-CAM visualization. It does not
-include a frontend. Grad-CAM shows model attention and is not proof of a
-clinical lesion or a clinical diagnosis.
+standalone retinal candidate analysis, Grad-CAM visualization, and automated
+JSON, Markdown, and PDF reports. It does not include a frontend. Grad-CAM
+shows model attention and is not proof of a clinical lesion or a clinical
+diagnosis.
