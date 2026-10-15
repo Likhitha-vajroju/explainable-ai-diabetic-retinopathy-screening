@@ -17,6 +17,12 @@ from src.dr_classification.classifier import (
     load_model_checkpoint,
     validate_split_separation,
 )
+from src.dr_classification.calibration import (
+    apply_temperature,
+    calibration_summary,
+    fit_temperature,
+    save_reliability_diagram,
+)
 from src.dr_classification.evaluation_metrics import evaluate_predictions
 from src.dr_classification.evaluation_reporting import (
     build_evaluation_report,
@@ -76,6 +82,7 @@ def evaluate_checkpoint(
     model.eval()
     targets: list[int] = []
     probability_rows: list[list[float]] = []
+    logit_rows: list[list[float]] = []
     criterion = torch.nn.CrossEntropyLoss(weight=loss_weights)
     total_loss = 0.0
     total_examples = 0
@@ -89,9 +96,52 @@ def evaluate_checkpoint(
             total_loss += float(loss) * batch_size
             total_examples += batch_size
             targets.extend(labels.cpu().tolist())
+            logit_rows.extend(logits.cpu().tolist())
             probability_rows.extend(torch.softmax(logits, dim=1).cpu().tolist())
 
+    if split == "test":
+        calibration_dataset = datasets["validation"]
+        calibration_loader = DataLoader(
+            calibration_dataset,
+            batch_size=config.batch_size,
+            shuffle=False,
+            num_workers=config.num_workers,
+            pin_memory=device.type == "cuda",
+        )
+        calibration_targets: list[int] = []
+        calibration_logits: list[list[float]] = []
+        with torch.inference_mode():
+            for images, labels in calibration_loader:
+                logits = model(
+                    images.to(device, non_blocking=device.type == "cuda")
+                )
+                calibration_targets.extend(labels.tolist())
+                calibration_logits.extend(logits.cpu().tolist())
+        temperature_fit_split = "validation"
+    else:
+        calibration_targets = targets
+        calibration_logits = logit_rows
+        temperature_fit_split = split
+
+    temperature = fit_temperature(calibration_logits, calibration_targets)
+    calibrated_probability_rows = apply_temperature(logit_rows, temperature).tolist()
+    raw_calibration = calibration_summary(probability_rows, targets)
+    calibrated_calibration = calibration_summary(calibrated_probability_rows, targets)
+
     metrics = evaluate_predictions(targets, probability_rows, config.class_names)
+    metrics["confidence_calibration"] = {
+        "method": "Multiclass scalar temperature scaling fitted by validation NLL.",
+        "temperature": temperature,
+        "fit_split": temperature_fit_split,
+        "evaluation_split": split,
+        "fit_and_evaluation_split_overlap": temperature_fit_split == split,
+        "raw": raw_calibration,
+        "calibrated": calibrated_calibration,
+        "interpretation": (
+            "Calibrated probabilities are experimental estimates of model "
+            "confidence, not clinical certainty."
+        ),
+    }
     metrics["loss"] = total_loss / total_examples
     metrics["loss_definition"] = (
         "Mean weighted cross-entropy using inverse-frequency weights from train only."
@@ -134,6 +184,12 @@ def evaluate_checkpoint(
             writer.writerow([name, *row])
     dashboard_path = output_path / f"{split}_evaluation_dashboard.png"
     save_evaluation_dashboard(metrics, config.class_names, dashboard_path)
+    reliability_path = output_path / f"{split}_reliability_diagram.png"
+    save_reliability_diagram(
+        raw_calibration,
+        calibrated_calibration,
+        reliability_path,
+    )
     report_path = output_path / f"{split}_evaluation_report.md"
     report_path.write_text(
         build_evaluation_report(metrics_payload),
@@ -143,6 +199,7 @@ def evaluate_checkpoint(
         "metrics": metrics_path,
         "confusion_matrix_csv": matrix_csv,
         "evaluation_dashboard": dashboard_path,
+        "reliability_diagram": reliability_path,
         "report": report_path,
         **metrics,
     }
@@ -185,6 +242,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"Metrics: {result['metrics']}")
     print(f"Confusion matrix CSV: {result['confusion_matrix_csv']}")
     print(f"Evaluation dashboard: {result['evaluation_dashboard']}")
+    print(f"Reliability diagram: {result['reliability_diagram']}")
     print(f"Evaluation report: {result['report']}")
     binary = result["binary_referable"]
     sensitivity = binary["sensitivity"]

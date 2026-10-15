@@ -158,6 +158,22 @@ class ClassificationEvaluationTests(unittest.TestCase):
                 "referable_sensitivity_strictly_above": 0.90,
                 "referable_specificity_strictly_above": 0.85,
             },
+            "confidence_calibration": {
+                "method": "Multiclass scalar temperature scaling fitted by validation NLL.",
+                "temperature": 1.25,
+                "fit_split": "validation",
+                "evaluation_split": "test",
+                "fit_and_evaluation_split_overlap": False,
+                "raw": {
+                    "expected_calibration_error": 0.2,
+                    "negative_log_likelihood": 0.5,
+                },
+                "calibrated": {
+                    "expected_calibration_error": 0.1,
+                    "negative_log_likelihood": 0.3,
+                },
+                "interpretation": "Model confidence, not clinical certainty.",
+            },
         }
 
         report = build_evaluation_report(payload)
@@ -167,6 +183,9 @@ class ClassificationEvaluationTests(unittest.TestCase):
         self.assertIn("possible dataset bias", report.lower())
         self.assertIn("clinical validation", report.lower())
         self.assertIn("Class counts", report)
+        self.assertIn("Confidence calibration", report)
+        self.assertIn("Raw top-label ECE: 0.2000", report)
+        self.assertIn("ophthalmologist review recommended", report.lower())
 
     def test_report_does_not_claim_targets_when_values_are_below_targets(self) -> None:
         metrics = evaluate_predictions(

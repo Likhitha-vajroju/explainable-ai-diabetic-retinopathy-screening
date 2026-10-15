@@ -29,10 +29,11 @@ experiment setting, not evidence that labels were clinically validated.
 
 All reported metrics are measured on the provided data and are experimental.
 They do not establish clinical validity or performance in other populations,
-devices, or workflows. Confidence is the maximum softmax probability and is
-not calibrated. No sensitivity, specificity, or accuracy target is asserted.
-This is not a diagnostic service, and its outputs must not direct individual
-care.
+devices, or workflows. Raw confidence is the maximum softmax probability and
+is not calibrated. Optional temperature scaling fits a scalar on validation
+logits; calibration estimates model confidence, not clinical certainty. No
+sensitivity, specificity, or accuracy target is asserted. This is not a
+diagnostic service, and its outputs must not direct individual care.
 
 ## Prepare the split metadata
 
@@ -120,10 +121,22 @@ probabilities assigned to levels 2/3/4 as its continuous score. The requested
 compares actual measured values with those strict cutoffs and reports honestly
 whether each is met.
 
+The evaluation command also fits a scalar temperature using validation
+logits, reports raw and temperature-scaled Expected Calibration Error (ECE),
+Brier score, and negative log-likelihood on the selected split, and saves a
+reliability diagram. For a test evaluation, calibration uses the separate
+validation split. For a validation evaluation, the same split is used to fit
+and report calibration, so those calibration metrics are explicitly marked
+in-sample and optimistic; use the test results for a separate evaluation.
+Temperature, calibration summaries, and split information are saved in the
+metrics JSON. Calibration does not change the predicted grade or referral
+grouping.
+
 Outputs include metrics JSON with ROC coordinates and train/validation/test
 class counts, a labeled confusion-matrix CSV, a four-panel PNG dashboard
 (row-normalized multiclass confusion matrix, binary confusion matrix, five
-one-vs-rest ROC curves, and referable ROC curve), and a Markdown report with
+one-vs-rest ROC curves, and referable ROC curve), a raw-versus-calibrated
+reliability diagram, and a Markdown report with
 setup, class imbalance, measured results, target status, and limitations.
 No metrics are prefilled or fabricated.
 
@@ -159,7 +172,18 @@ python -m src.dr_classification.inference `
 The JSON result contains `predicted_dr_level`, `predicted_label`, all five
 `class_probabilities`, and `raw_confidence` (the largest softmax probability).
 An optional `--output "prediction.json"` saves a new JSON file and refuses to
-overwrite an existing file.
+overwrite an existing file. The result also contains a `screening_result`
+object with raw probabilities, DR grade, project-defined referable status,
+review recommendation, and a `null` calibrated confidence unless a
+temperature is supplied. To use a temperature from an evaluation metrics
+JSON, pass `--calibration-temperature <temperature>`; the value must have been
+fit on the appropriate validation set for the same checkpoint.
+
+Referable screening groups levels 0 and 1 as non-referable and levels 2, 3,
+and 4 as referable. A referable result is worded “Referable screening result —
+ophthalmologist review recommended.” This is a project screening convention,
+not an independent diagnosis or a treatment decision. Non-referable status
+does not rule out disease or replace clinical assessment.
 
 ## Tests
 

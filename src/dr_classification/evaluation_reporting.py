@@ -252,6 +252,8 @@ def build_evaluation_report(payload: dict[str, Any]) -> str:
             "## Binary referable DR results",
             "",
             "**Non-referable:** levels 0 and 1. **Referable:** levels 2, 3, and 4.",
+            "A referable screening result — ophthalmologist review recommended. "
+            "This project grouping is not an independent diagnosis or treatment decision.",
             "The confusion matrix and thresholded metrics use the unchanged five-class argmax "
             "grouped into these two sets. ROC-AUC uses the summed referable probability "
             "and is threshold-independent.",
@@ -313,4 +315,32 @@ def build_evaluation_report(payload: dict[str, Any]) -> str:
             "",
         )
     )
+    calibration = payload.get("confidence_calibration")
+    if calibration is not None:
+        raw = calibration["raw"]
+        calibrated = calibration["calibrated"]
+        rows.extend(
+            (
+                "",
+                "## Confidence calibration",
+                "",
+                f"- Method: {calibration['method']}",
+                f"- Temperature: {calibration['temperature']:.6g}.",
+                f"- Fit split: `{calibration['fit_split']}`; evaluation split: "
+                f"`{calibration['evaluation_split']}`.",
+                "- Temperature fit and evaluation use the same split for this report: "
+                + ("yes; interpret as in-sample and optimistic." if calibration[
+                    "fit_and_evaluation_split_overlap"
+                ] else "no."),
+                f"- Raw top-label ECE: {raw['expected_calibration_error']:.4f}; "
+                f"temperature-scaled ECE: "
+                f"{calibrated['expected_calibration_error']:.4f}.",
+                f"- Raw NLL: {raw['negative_log_likelihood']:.4f}; "
+                f"temperature-scaled NLL: "
+                f"{calibrated['negative_log_likelihood']:.4f}.",
+                f"- {calibration['interpretation']}",
+                "- See the companion reliability diagram for confidence-bin "
+                "accuracy versus predicted probability.",
+            )
+        )
     return "\n".join(rows)

@@ -96,12 +96,16 @@ configuration, and manual test commands.
 
 The project includes ResNet transfer-learning training, validation-based model
 selection, held-out test evaluation, five-class and binary referable metrics,
-ROC-AUC, evaluation reports/plots, training curves, and single-image inference.
+validation-fitted temperature scaling, reliability diagrams, screening-result
+formatting, ROC-AUC, evaluation reports/plots, training curves, and single-image
+inference.
 The >90% sensitivity and >85% specificity values are targets, not guaranteed
 results; actual evaluation values are reported without modifying predictions.
 No performance results are prefilled or claimed; metrics are produced only by
 running training/evaluation on local data. Checkpoints and evaluation outputs
-are excluded from Git. See
+are excluded from Git. Referable levels 2–4 recommend ophthalmologist review
+under this project definition; calibrated confidence is not clinical certainty.
+See
 [`src/dr_classification/README.md`](src/dr_classification/README.md) for dataset
 setup, training, evaluation, inference, and limitations.
 
@@ -117,6 +121,7 @@ setup, training, evaluation, inference, and limitations.
 Each stage should be scoped, reviewed, and validated before proceeding. The
 current scope includes dataset-preparation utilities, configurable retinal
 image preprocessing, an engineering image quality assessment module, an
-experimental DR classifier, and Grad-CAM visualization. It does not include a
-frontend. Grad-CAM shows model attention and is not proof of a clinical lesion
-or a clinical diagnosis.
+experimental DR classifier with calibration and referable screening support,
+standalone retinal candidate analysis, and Grad-CAM visualization. It does not
+include a frontend. Grad-CAM shows model attention and is not proof of a
+clinical lesion or a clinical diagnosis.

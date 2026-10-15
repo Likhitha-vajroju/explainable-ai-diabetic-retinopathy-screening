@@ -408,6 +408,7 @@ def predict_image(
     model: nn.Module,
     config: ClassificationConfig,
     device: torch.device,
+    calibration_temperature: float | None = None,
 ) -> dict[str, Any]:
     processed = preprocess_image(image_path, config.preprocessing)
     pixels = np.ascontiguousarray(processed.normalized_image.transpose(2, 0, 1))
@@ -415,11 +416,26 @@ def predict_image(
     input_tensor = torch.from_numpy(pixels).unsqueeze(0).to(device)
     model.eval()
     with torch.inference_mode():
-        probabilities = torch.softmax(model(input_tensor), dim=1)[0]
-    return prediction_result(
-        probabilities.detach().cpu().numpy(),
-        config.class_names,
+        logits = model(input_tensor)[0]
+        probabilities = torch.softmax(logits, dim=0)
+    raw_probabilities = probabilities.detach().cpu().numpy()
+    calibrated_probabilities = None
+    if calibration_temperature is not None:
+        from src.dr_classification.calibration import apply_temperature
+
+        calibrated_probabilities = apply_temperature(
+            logits.detach().cpu().numpy(),
+            calibration_temperature,
+        )
+    from src.dr_classification.decision_support import screening_result
+
+    result = prediction_result(raw_probabilities, config.class_names)
+    result["screening_result"] = screening_result(
+        raw_probabilities,
+        calibrated_probabilities,
+        class_names=config.class_names,
     )
+    return result
 
 
 def save_confusion_matrix(

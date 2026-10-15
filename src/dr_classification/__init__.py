@@ -10,6 +10,13 @@ from src.dr_classification.classifier import (
     predict_image,
     prediction_result,
 )
+from src.dr_classification.calibration import (
+    apply_temperature,
+    calibration_summary,
+    fit_temperature,
+    save_reliability_diagram,
+)
+from src.dr_classification.decision_support import screening_result
 
 __all__ = [
     "ClassificationConfig",
@@ -20,4 +27,9 @@ __all__ = [
     "load_model_checkpoint",
     "predict_image",
     "prediction_result",
+    "apply_temperature",
+    "calibration_summary",
+    "fit_temperature",
+    "save_reliability_diagram",
+    "screening_result",
 ]

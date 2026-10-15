@@ -20,11 +20,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("image", type=Path)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, help="Optional JSON output file.")
+    parser.add_argument(
+        "--calibration-temperature",
+        type=float,
+        help=(
+            "Optional temperature fitted on the validation split (for example, "
+            "from evaluation metrics JSON)."
+        ),
+    )
     args = parser.parse_args(argv)
     if not args.image.is_file():
         parser.error(f"Image does not exist: {args.image}")
     model, config, device = load_model_checkpoint(args.checkpoint)
-    prediction = predict_image(args.image, model, config, device)
+    prediction = predict_image(
+        args.image,
+        model,
+        config,
+        device,
+        calibration_temperature=args.calibration_temperature,
+    )
     prediction["performance_scope"] = (
         "Experimental model output; not clinically validated or a diagnosis."
     )
