@@ -35,7 +35,7 @@ The intended users are screening-program staff, trained health workers, optometr
 
 ## Technology stack
 
-The current project uses Python, Pillow, and NumPy for image handling and preprocessing, and PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations. An API/UI framework remains a candidate for a later, separately scoped stage.
+The current project uses Python, Pillow, and NumPy for image handling and preprocessing, PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations, FastAPI for the local API, and React/Vite for the review UI.
 
 ## Project architecture
 
@@ -52,7 +52,7 @@ src/
 models/                        Model artifact documentation; weights are not stored in Git
 evaluation/                    Evaluation plans and future evaluation code
 reports/                       Report documentation and future generated reports
-frontend/                      Reserved for a future user interface
+frontend/                      React/Vite screening review interface
 simulation/                    Workflow and deployment simulation
 tests/                         Automated tests
 docs/                          Project and research documentation
@@ -122,7 +122,8 @@ Each stage should be scoped, reviewed, and validated before proceeding. The
 current scope includes dataset-preparation utilities, configurable retinal
 image preprocessing, an engineering image quality assessment module, an
 experimental DR classifier with calibration and referable screening support,
-standalone retinal candidate analysis, Grad-CAM visualization, and automated
-JSON, Markdown, and PDF reports. It does not include a frontend. Grad-CAM
-shows model attention and is not proof of a clinical lesion or a clinical
-diagnosis.
+standalone retinal candidate analysis, Grad-CAM visualization, automated
+JSON, Markdown, and PDF reports, and a local FastAPI/React screening review
+application. Grad-CAM shows model attention and is not proof of a clinical
+lesion or a clinical diagnosis. See [frontend/README.md](frontend/README.md)
+for local startup instructions.

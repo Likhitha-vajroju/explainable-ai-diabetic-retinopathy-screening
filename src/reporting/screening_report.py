@@ -258,11 +258,15 @@ def _save_pdf(result: dict[str, Any], output_path: Path) -> None:
                 result["retinal_lesion_evidence"].get("visualization_path"),
             ),
         ]
-        available_paths = [
-            (title, Path(path))
-            for title, path in evidence_paths
-            if path and Path(path).is_file()
-        ]
+        available_paths: list[tuple[str, Path]] = []
+        for title, path in evidence_paths:
+            if not path:
+                continue
+            image_path = Path(path)
+            if not image_path.is_absolute():
+                image_path = output_path.parent / image_path
+            if image_path.is_file():
+                available_paths.append((title, image_path))
         if available_paths:
             figure, axes = plt.subplots(
                 len(available_paths),
