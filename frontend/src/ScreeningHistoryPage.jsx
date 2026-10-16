@@ -5,6 +5,16 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
+function reviewerDecisionLabel(value) {
+  const labels = {
+    ai_prediction_accepted: "AI prediction accepted",
+    ai_prediction_modified: "AI prediction modified",
+    image_requires_manual_review: "Image requires manual review",
+    image_ungradable: "Image ungradable",
+  };
+  return labels[value] || "Not reviewed";
+}
+
 function ScreeningTrend({ records }) {
   const chronological = [...records].sort(
     (first, second) => new Date(first.screened_at) - new Date(second.screened_at),
@@ -145,18 +155,19 @@ function ScreeningHistoryPage({ apiBase, initialPatientId = "" }) {
           <article className="panel history-records">
             <div className="panel-title">
               <span className="panel-icon">▤</span>
-              <div><span className="section-kicker">SCREENING-RESULT HISTORY</span><h3>{records.length} previous {records.length === 1 ? "result" : "results"}</h3></div>
+              <div><span className="section-kicker">SCREENING-RESULT HISTORY</span><h3>{records.length} previous {records.length === 1 ? "result" : "results"}</h3><p className="history-case-id">Anonymous case ID: {records[0].anonymous_patient_id}</p></div>
             </div>
             <div className="history-table-wrap">
               <table className="history-table">
                 <thead>
                   <tr>
                     <th scope="col">Screening date/time</th>
+                    <th scope="col">Reviewer decision</th>
+                    <th scope="col">Reviewed at</th>
                     <th scope="col">DR level</th>
                     <th scope="col">Referable</th>
                     <th scope="col">Confidence</th>
                     <th scope="col">Image quality</th>
-                    <th scope="col">Reviewer decision</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -165,11 +176,12 @@ function ScreeningHistoryPage({ apiBase, initialPatientId = "" }) {
                   ).map((record) => (
                     <tr key={record.id}>
                       <td>{formatDate(record.screened_at)}</td>
+                      <td>{reviewerDecisionLabel(record.reviewer_decision)}</td>
+                      <td>{record.reviewed_at ? formatDate(record.reviewed_at) : "Not reviewed"}</td>
                       <td>Level {record.dr_level}</td>
                       <td>{record.referable ? "Yes" : "No"}</td>
                       <td>{(record.confidence * 100).toFixed(1)}%</td>
                       <td>{record.image_quality_score}/100</td>
-                      <td>{record.reviewer_decision?.replaceAll("_", " ") || "Not recorded"}</td>
                     </tr>
                   ))}
                 </tbody>

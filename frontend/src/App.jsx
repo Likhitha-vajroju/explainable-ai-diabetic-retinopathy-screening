@@ -61,11 +61,12 @@ function App() {
   const [showEnhanced, setShowEnhanced] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [page, setPage] = useState("screening");
-  const [recordPatientId, setRecordPatientId] = useState("");
+  const [reviewCaseId, setReviewCaseId] = useState("");
   const [reviewerDecision, setReviewerDecision] = useState("");
-  const [historySaveLoading, setHistorySaveLoading] = useState(false);
-  const [historySaveError, setHistorySaveError] = useState("");
-  const [savedHistoryPatientId, setSavedHistoryPatientId] = useState("");
+  const [reviewRecord, setReviewRecord] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewedAt, setReviewedAt] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -95,7 +96,9 @@ function App() {
     if (!candidate) return;
     setResult(null);
     setArtifacts({});
-    setSavedHistoryPatientId("");
+    setReviewRecord(null);
+    setReviewedAt("");
+    setReviewerDecision("");
     setShowEnhanced(false);
     const validationError = fileError(candidate);
     if (validationError) {
@@ -116,8 +119,10 @@ function App() {
     setError("");
     setResult(null);
     setArtifacts({});
-    setHistorySaveError("");
-    setSavedHistoryPatientId("");
+    setReviewError("");
+    setReviewRecord(null);
+    setReviewedAt("");
+    setReviewerDecision("");
     try {
       const formData = new FormData();
       formData.append("image", file);
@@ -139,38 +144,57 @@ function App() {
     }
   }
 
-  async function saveScreeningRecord(event) {
+  async function submitReviewerDecision(event) {
     event.preventDefault();
-    const anonymousPatientId = recordPatientId.trim();
+    const anonymousPatientId = reviewCaseId.trim();
     if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(anonymousPatientId)) {
-      setHistorySaveError("Enter an anonymous ID using letters, numbers, hyphens, or underscores only.");
+      setReviewError("Enter an anonymous case ID using letters, numbers, hyphens, or underscores only.");
+      return;
+    }
+    if (!reviewerDecision) {
+      setReviewError("Select a reviewer decision before submitting this case.");
       return;
     }
 
-    setHistorySaveLoading(true);
-    setHistorySaveError("");
+    setReviewLoading(true);
+    setReviewError("");
     try {
-      const response = await fetch(`${API_BASE}/api/screening-history`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          anonymous_patient_id: anonymousPatientId,
-          dr_level: prediction.grade,
-          referable: screening.referable,
-          confidence: prediction.raw_confidence,
-          image_quality_score: quality.score,
-          reviewer_decision: reviewerDecision || null,
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(typeof payload.detail === "string" ? payload.detail : "Screening result could not be saved.");
+      let record = reviewRecord;
+      if (!record) {
+        const createResponse = await fetch(`${API_BASE}/api/screening-history`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            anonymous_patient_id: anonymousPatientId,
+            dr_level: prediction.grade,
+            referable: screening.referable,
+            confidence: prediction.raw_confidence,
+            image_quality_score: quality.score,
+          }),
+        });
+        const createPayload = await createResponse.json().catch(() => ({}));
+        if (!createResponse.ok) {
+          throw new Error(typeof createPayload.detail === "string" ? createPayload.detail : "Screening case could not be saved.");
+        }
+        record = createPayload;
+        setReviewRecord(record);
       }
-      setSavedHistoryPatientId(payload.anonymous_patient_id);
+
+      const reviewResponse = await fetch(`${API_BASE}/api/screening-history/${record.id}/review`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewer_decision: reviewerDecision }),
+      });
+      const reviewPayload = await reviewResponse.json().catch(() => ({}));
+      if (!reviewResponse.ok) {
+        throw new Error(typeof reviewPayload.detail === "string" ? reviewPayload.detail : "Reviewer decision could not be saved.");
+      }
+      setReviewRecord(reviewPayload);
+      setReviewedAt(reviewPayload.reviewed_at);
     } catch (reason) {
-      setHistorySaveError(reason.message || "Unable to save screening result history.");
+      setReviewError(reason.message || "Unable to save the reviewer decision.");
     } finally {
-      setHistorySaveLoading(false);
+      setReviewLoading(false);
     }
   }
 
@@ -180,9 +204,6 @@ function App() {
   const gradcam = result?.gradcam;
   const retinal = result?.retinal_lesion_evidence;
   const recommendations = screening?.recommendation || "";
-  const historyRecordSaved = Boolean(savedHistoryPatientId)
-    && savedHistoryPatientId === recordPatientId.trim();
-
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -284,42 +305,6 @@ function App() {
               </div>
             </div>
             <div className="disclaimer-strip"><Icon name="shield" size={18} /><span><strong>AI-assisted screening — not a definitive diagnosis.</strong> Performance depends on dataset and validation conditions.</span></div>
-            <form className="panel record-save" onSubmit={saveScreeningRecord}>
-              <div className="record-save-copy">
-                <span className="section-kicker">OPTIONAL LOCAL HISTORY</span>
-                <h3>Save this screening result</h3>
-                <p>Only the anonymous ID and screening fields below are saved locally. The image is not stored.</p>
-              </div>
-              <div className="record-save-fields">
-                <label htmlFor="record-patient-id">Anonymous patient ID</label>
-                <input
-                  id="record-patient-id"
-                  value={recordPatientId}
-                  onChange={(event) => { setRecordPatientId(event.target.value); setSavedHistoryPatientId(""); }}
-                  placeholder="e.g. ANON-1042"
-                  maxLength={64}
-                  autoComplete="off"
-                />
-                <p className="form-hint">Do not enter a name, contact detail, or other identifying information.</p>
-                <label htmlFor="reviewer-decision">Reviewer decision <span>(optional)</span></label>
-                <select id="reviewer-decision" value={reviewerDecision} onChange={(event) => { setReviewerDecision(event.target.value); setSavedHistoryPatientId(""); }}>
-                  <option value="">Not recorded</option>
-                  <option value="agrees">Agrees with screening result</option>
-                  <option value="disagrees">Disagrees with screening result</option>
-                  <option value="requires_additional_review">Requires additional review</option>
-                </select>
-              </div>
-              {historySaveError && <div className="inline-error" role="alert">{historySaveError}</div>}
-              {savedHistoryPatientId && (
-                <div className="history-save-success" role="status">
-                  Screening result saved locally.
-                  <button type="button" className="text-button" onClick={() => setPage("history")}>View this screening-result history</button>
-                </div>
-              )}
-              <button className="button button-primary" type="submit" disabled={historySaveLoading || historyRecordSaved}>
-                {historySaveLoading ? "Saving…" : historyRecordSaved ? "Screening result saved" : "Save screening result"}
-              </button>
-            </form>
             <div className={`referral-banner ${screening?.referable ? "referable" : "nonreferable"}`}>
               <div className="referral-icon"><Icon name={screening?.referable ? "alert" : "check"} size={22} /></div>
               <div><span className="banner-label">{screening?.referable ? "REFERABLE SCREENING RESULT" : "NON-REFERABLE UNDER PROJECT DEFINITION"}</span><h3>{recommendations}</h3><p>Screening grouping: Levels 0–1 non-referable · Levels 2–4 referable</p></div>
@@ -392,6 +377,57 @@ function App() {
               <div><span className="section-kicker">RECOMMENDED NEXT ACTION</span><p>{recommendations}</p></div>
             </div>
 
+            <form className="panel reviewer-workflow" onSubmit={submitReviewerDecision}>
+              <div className="reviewer-heading">
+                <span className="section-kicker">HUMAN REVIEW REQUIRED</span>
+                <h3>Qualified reviewer decision</h3>
+                <p>AI outputs are screening support only. An ophthalmologist or other qualified clinician remains responsible for final clinical interpretation.</p>
+              </div>
+              <div className="reviewer-evidence-summary">
+                <span>Review this case with the original fundus image, DR prediction, confidence, referable status, Grad-CAM and any available retinal evidence above.</span>
+                <span>Screening recommendation: {recommendations}</span>
+              </div>
+              <div className="reviewer-fields">
+                <label htmlFor="review-case-id">Anonymous case ID</label>
+                <input
+                  id="review-case-id"
+                  value={reviewCaseId}
+                  onChange={(event) => setReviewCaseId(event.target.value)}
+                  placeholder="e.g. CASE-1042"
+                  maxLength={64}
+                  autoComplete="off"
+                  disabled={Boolean(reviewRecord)}
+                  required
+                />
+                <p className="form-hint">Use an anonymous, pre-assigned ID only. This prototype does not authenticate reviewer identity.</p>
+                <label htmlFor="reviewer-decision">Review outcome</label>
+                <select
+                  id="reviewer-decision"
+                  value={reviewerDecision}
+                  onChange={(event) => setReviewerDecision(event.target.value)}
+                  disabled={Boolean(reviewedAt)}
+                  required
+                >
+                  <option value="" disabled>Select a reviewer decision</option>
+                  <option value="ai_prediction_accepted">AI prediction accepted</option>
+                  <option value="ai_prediction_modified">AI prediction modified</option>
+                  <option value="image_requires_manual_review">Image requires manual review</option>
+                  <option value="image_ungradable">Image ungradable</option>
+                </select>
+              </div>
+              {reviewError && <div className="inline-error" role="alert">{reviewError}</div>}
+              {reviewedAt && (
+                <div className="history-save-success" role="status">
+                  <span>Reviewer decision saved at {new Date(reviewedAt).toLocaleString()} for case {reviewRecord.anonymous_patient_id}.</span>
+                  <button type="button" className="text-button" onClick={() => setPage("history")}>View screening-result history</button>
+                </div>
+              )}
+              <button className="button button-primary" type="submit" disabled={reviewLoading || Boolean(reviewedAt)}>
+                {reviewLoading ? "Saving review…" : reviewedAt ? "Reviewer decision recorded" : reviewRecord ? "Retry saving reviewer decision" : "Record reviewer decision"}
+              </button>
+              <p className="reviewer-audit-note">Case and screening timestamps are stored locally with this decision. No uploaded image is stored.</p>
+            </form>
+
             <article className="report-card">
               <div className="report-card-copy"><span className="report-icon"><Icon name="file" size={21} /></span><div><h3>Screening report</h3><p>Review or save the generated report and analysis details.</p></div></div>
               <div className="report-actions">
@@ -408,7 +444,7 @@ function App() {
         {page === "history" && (
           <ScreeningHistoryPage
             apiBase={API_BASE}
-            initialPatientId={savedHistoryPatientId}
+            initialPatientId={reviewRecord?.anonymous_patient_id || ""}
           />
         )}
       </main>

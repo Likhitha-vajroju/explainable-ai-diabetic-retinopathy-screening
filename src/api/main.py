@@ -48,9 +48,10 @@ CONTENT_TYPES_BY_FORMAT = {
 }
 
 ReviewerDecision = Literal[
-    "agrees",
-    "disagrees",
-    "requires_additional_review",
+    "ai_prediction_accepted",
+    "ai_prediction_modified",
+    "image_requires_manual_review",
+    "image_ungradable",
 ]
 
 
@@ -64,7 +65,10 @@ class ScreeningRecordCreate(BaseModel):
     referable: bool
     confidence: float = Field(ge=0, le=1)
     image_quality_score: float = Field(ge=0, le=100)
-    reviewer_decision: ReviewerDecision | None = None
+
+
+class ReviewerDecisionUpdate(BaseModel):
+    reviewer_decision: ReviewerDecision
 
 
 def _configured_temperature() -> float | None:
@@ -205,7 +209,7 @@ def create_app(
             if origin.strip()
         ],
         allow_credentials=False,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PUT"],
         allow_headers=["Content-Type"],
     )
 
@@ -240,6 +244,20 @@ def create_app(
             "anonymous_patient_id": anonymous_patient_id,
             "records": records,
         }
+
+    @application.put("/api/screening-history/{record_id}/review")
+    async def update_reviewer_decision(
+        record_id: int,
+        decision: ReviewerDecisionUpdate,
+    ) -> dict[str, Any]:
+        record = await run_in_threadpool(
+            history_store.record_reviewer_decision,
+            record_id,
+            decision.reviewer_decision,
+        )
+        if record is None:
+            raise HTTPException(status_code=404, detail="Screening record not found.")
+        return record
 
     @application.post("/api/analyze")
     async def analyze(image: UploadFile = File(...)) -> dict[str, Any]:

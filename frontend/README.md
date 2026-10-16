@@ -56,12 +56,19 @@ preprocessed image, model grade and probabilities, referable grouping,
 calibrated confidence when configured, Grad-CAM and retinal evidence when
 available, and JSON/Markdown/PDF screening reports. Optional visual-evidence
 failures are surfaced as unavailable without discarding a successful
-classifier result. To save the optional screening-result history, enter an
-anonymous ID and (if available) a reviewer decision after analysis. Use the
-Screening history page to look up previous results and view the predicted DR
-level trend. Changes between predicted grades are changes in screening results
-only; they are not confirmed disease progression. Unsupported or malformed
-uploads and unavailable models return explicit errors.
+classifier result. A qualified reviewer can record one of four outcomes:
+AI prediction accepted, AI prediction modified, image requires manual review,
+or image ungradable. The outcome is saved with the screening result, anonymous
+case ID, screening timestamp, and review timestamp. Use the Screening history
+page to look up previous results and view the predicted DR level trend.
+Changes between predicted grades are changes in screening results only; they
+are not confirmed disease progression.
+
+This prototype does not authenticate reviewers or enforce authorization.
+Reviewer controls are a workflow demonstration, not access control. AI output
+is screening support only; an ophthalmologist or other qualified clinician
+remains responsible for final clinical interpretation. Unsupported or
+malformed uploads and unavailable models return explicit errors.
 
 This is an AI-assisted screening research prototype, not a definitive
 diagnosis or treatment recommendation. It is not clinically validated;

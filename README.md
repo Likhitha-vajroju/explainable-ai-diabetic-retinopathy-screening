@@ -69,6 +69,14 @@ are kept in `data/screening_history.sqlite3` by default (or at the path set by
 anonymous identifiers. See [`frontend/README.md`](frontend/README.md) for the
 history workflow and local setup.
 
+After analysis, a qualified reviewer can record whether the AI prediction was
+accepted or modified, or flag the image for manual review or as ungradable.
+The anonymous case ID and screening/review timestamps are stored with that
+decision. Reviewer controls do not authenticate or authorize users in this
+prototype; an ophthalmologist or other qualified clinician remains responsible
+for final clinical interpretation. AI predictions and visual evidence support
+review but do not make autonomous clinical decisions.
+
 ## Responsible AI and medical disclaimer
 
 This is a research and educational project, not a medical device or a clinically validated screening service. The image quality score is an engineering screening metric with configurable heuristic thresholds; neither its score nor its thresholds have been clinically validated. It does not diagnose diabetic retinopathy, determine treatment, or replace examination by a qualified healthcare professional. Do not use it to make decisions about an individual's care. Future work must address image-quality failures, uncertainty, explainability limits, dataset provenance and representation, privacy, security, local clinical workflows, and validation across intended populations and devices. All patient-facing use would require appropriate clinical oversight and regulatory and institutional review.

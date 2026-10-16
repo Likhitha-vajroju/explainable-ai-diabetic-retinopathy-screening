@@ -177,17 +177,24 @@ h1,h2,h3,p { margin-top: 0; }
 .report-card p { margin: 0; color: #7b898a; font-size: 10px; }
 .report-actions { display: flex; gap: 7px; }
 .report-preview { width: 100%; max-height: 420px; overflow: auto; margin: 15px 0 0; padding: 16px; color: #42595a; border: 1px solid #e7eeec; border-radius: 9px; background: #f8fbfa; white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/1.6 "Aptos", "Segoe UI",sans-serif; }
-.record-save { display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,.8fr); gap: 13px 24px; align-items: start; padding: 20px 22px; }
-.record-save-copy h3 { margin: 5px 0; font: 700 16px "Segoe UI",sans-serif; }
-.record-save-copy p,.form-hint { margin: 0; color: #78898a; font-size: 10px; line-height: 1.5; }
-.record-save-fields { display: grid; gap: 7px; }
-.record-save-fields label,.history-lookup label { color: #43595b; font-size: 10px; font-weight: 700; }
-.record-save-fields label span { color: #899796; font-weight: 400; }
-.record-save-fields input,.record-save-fields select,.history-search-row input { width: 100%; min-height: 40px; padding: 0 11px; color: #31494b; border: 1px solid #dbe6e3; border-radius: 8px; background: #fff; font-size: 11px; }
-.record-save-fields input:focus,.record-save-fields select:focus,.history-search-row input:focus { outline: 2px solid #85c6b6; outline-offset: 1px; }
-.record-save .inline-error,.record-save .history-save-success { grid-column: 1 / -1; margin: 0; }
-.record-save>.button { grid-column: 1 / -1; justify-self: start; }
+.form-hint { margin: 0; color: #78898a; font-size: 10px; line-height: 1.5; }
+.history-lookup label { color: #43595b; font-size: 10px; font-weight: 700; }
+.history-search-row input { width: 100%; min-height: 40px; padding: 0 11px; color: #31494b; border: 1px solid #dbe6e3; border-radius: 8px; background: #fff; font-size: 11px; }
+.history-search-row input:focus { outline: 2px solid #85c6b6; outline-offset: 1px; }
 .history-save-success { display: flex; align-items: center; gap: 8px; color: #347760; font-size: 11px; }
+.reviewer-workflow { display: grid; gap: 14px; padding: 21px 22px; border-color: #cfe5df; }
+.reviewer-heading h3 { margin: 5px 0; font: 700 17px "Segoe UI",sans-serif; }
+.reviewer-heading p { max-width: 760px; margin: 0; color: #687d7e; font-size: 11px; line-height: 1.6; }
+.reviewer-evidence-summary { display: grid; gap: 6px; padding: 12px 14px; color: #496568; border: 1px solid #e1eeea; border-radius: 9px; background: #f7fbf9; font-size: 10px; line-height: 1.5; }
+.reviewer-evidence-summary span:last-child { color: #315b56; font-weight: 700; }
+.reviewer-fields { display: grid; gap: 7px; max-width: 470px; }
+.reviewer-fields label { color: #43595b; font-size: 10px; font-weight: 700; }
+.reviewer-fields input,.reviewer-fields select { width: 100%; min-height: 40px; padding: 0 11px; color: #31494b; border: 1px solid #dbe6e3; border-radius: 8px; background: #fff; font-size: 11px; }
+.reviewer-fields input:focus,.reviewer-fields select:focus { outline: 2px solid #85c6b6; outline-offset: 1px; }
+.reviewer-fields input:disabled,.reviewer-fields select:disabled { background: #f3f6f5; color: #71817f; }
+.reviewer-workflow .inline-error { margin: 0; }
+.reviewer-workflow>.button { justify-self: start; }
+.reviewer-audit-note { margin: -5px 0 0; color: #879392; font-size: 9px; line-height: 1.5; }
 .history-page { display: grid; gap: 16px; margin: 38px 0 55px; }
 .history-heading { margin: 0 2px 4px; }
 .history-heading .section-kicker,.history-records .section-kicker,.trend-panel .section-kicker { color: #6d9892; }
@@ -212,6 +219,7 @@ h1,h2,h3,p { margin-top: 0; }
 .history-table th { padding: 10px 12px; color: #728481; border-bottom: 1px solid #e7eeec; font-size: 9px; font-weight: 700; }
 .history-table td { padding: 12px; color: #41595a; border-bottom: 1px solid #f0f3f2; font-size: 10px; }
 .history-table tbody tr:last-child td { border-bottom: 0; }
+.history-case-id { margin: 5px 0 0; color: #6f8280; font-size: 10px; }
 .footer { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 13px max(5.2vw, calc((100vw - 1240px)/2)); border-top: 1px solid #e7edeb; background: #fff; }
 .footer-brand { display: flex; align-items: center; gap: 8px; white-space: nowrap; }.footer-brand strong { font: 700 12px "Segoe UI",sans-serif; }
 .brand-mark.small { width: 29px; height: 29px; border-radius: 9px; }
@@ -248,6 +256,7 @@ h1,h2,h3,p { margin-top: 0; }
   .workflow-heading p { max-width: none; margin: 0; text-align: left; }
   .upload-card { padding: 19px 15px 16px; }
   .record-save { grid-template-columns: 1fr; padding: 18px 15px; }
+  .reviewer-workflow { padding: 18px 15px; }
   .history-page { margin-top: 27px; }
   .history-heading h1 { font-size: 23px; }
   .history-search-row { align-items: stretch; flex-direction: column; }
