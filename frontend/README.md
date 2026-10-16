@@ -39,7 +39,7 @@ In another terminal:
 
 ```powershell
 Set-Location frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -74,3 +74,7 @@ This is an AI-assisted screening research prototype, not a definitive
 diagnosis or treatment recommendation. It is not clinically validated;
 performance depends on data, labels, and validation conditions. A referable
 result recommends ophthalmologist review.
+
+For the complete end-to-end data-flow description, exact demo sequence,
+installation commands, and known limitations, see the root
+[README.md](../README.md) and [architecture documentation](../docs/ARCHITECTURE.md).

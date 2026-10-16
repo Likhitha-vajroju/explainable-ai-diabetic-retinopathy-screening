@@ -132,6 +132,35 @@ single-machine timings exclude Grad-CAM, retinal evidence generation, network
 transfer, clinical review, and operational overhead. Do not treat them as a
 deployment service-level measurement.
 
+### Connecting measurements to scenario inputs
+
+The benchmark and the deployment simulators are separate tools; there is no
+live connection to the screening API. To carry measured prototype
+characteristics into an experiment:
+
+1. Run the benchmark with an authorized image representative of the target
+   input format/resolution and, when available, the same checkpoint and device
+   intended for inference.
+2. Copy the measured quality-assessment median into
+   `image_quality_assessment_time_seconds`.
+3. If prediction status is `measured`, copy its median into
+   `ai_processing_time_seconds`. This timing includes preprocessing plus
+   prediction. Do not add the separate preprocessing time again.
+4. Keep `image_transmission_size_mb`, `available_bandwidth_mbps`, staffing,
+   service hours, referral fractions, and reviewer time tied to their own
+   observed sources or label them as assumptions. The benchmark does not
+   measure these values.
+5. Save the resulting scenario JSON and record the benchmark JSON, image
+   properties, hardware/device, checkpoint identity, warmups, and repeats
+   alongside the simulation output.
+
+The simulator treats quality assessment and AI screening as sequential
+service stages, while the AI service time already includes preprocessing when
+derived from the benchmark's prediction timing. The separate preprocessing
+measurement is useful for component profiling but should not be added to that
+end-to-end AI service time. Neither simulator currently ingests real API
+telemetry or actual reviewer decisions.
+
 At implementation time, the actual image-quality assessment and preprocessing
 functions were timed locally using a generated, non-retinal 256 x 256 test
 image (one warm-up and three measured runs): image quality assessment median

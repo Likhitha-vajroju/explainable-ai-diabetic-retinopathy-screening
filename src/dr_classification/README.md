@@ -9,6 +9,13 @@ With `pretrained: true`, torchvision downloads ImageNet weights on first use if
 they are not already cached. For offline smoke tests, set `pretrained` to
 `false`; random initialization is not a meaningful evaluation.
 
+No trained DR checkpoint is included in this repository. The application
+requires a locally trained/obtained checkpoint compatible with the selected
+architecture, five-class mapping, and preprocessing configuration; set
+`DR_CHECKPOINT` as described in the root
+[README.md](../../README.md). Without a valid checkpoint the health route
+reports model unavailability and inference is not performed.
+
 The package reads the project's existing `split_metadata.csv`, uses
 `FundusClassificationDataset` to preprocess images with
 `src.preprocessing.image_pipeline.preprocess_image`, and respects the
@@ -196,3 +203,14 @@ python -m unittest discover -s tests -p "test_dr_classification.py" -v
 The inference-format tests check five probabilities, their sum, the predicted
 class, and the uncalibrated-confidence description. The suite does not claim
 model accuracy.
+
+## Use in the integrated review application
+
+The FastAPI service calls the existing prediction/report modules and returns
+the grade, probabilities, raw and optionally calibrated confidence,
+project-defined referable status, and any generated Grad-CAM/retinal evidence.
+Temperature scaling is optional and must be fitted on validation logits for
+the same checkpoint. It does not change the argmax grade or referral group.
+The local UI, report, installation, and demonstration workflow are documented
+in the [root README](../../README.md) and
+[architecture guide](../../docs/ARCHITECTURE.md).

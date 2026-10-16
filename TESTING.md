@@ -31,6 +31,7 @@ for browser-level workflow or accessibility testing.
 | --- | --- |
 | Python unit/integration suite | **Passed: 78 tests** |
 | Frontend production build | **Passed:** `npm run build` from `frontend/` |
+| Python telemedicine scenario smoke run | **Passed:** `scenario_100k.json` produced a JSON output in the system temporary directory |
 | `git diff --check` | Passed |
 | Tracked data/model artifact check | No tracked dataset images/CSVs or model checkpoints found |
 | Credential and user-specific path scan | No credentials or user-specific absolute paths found in tracked source; path examples in documentation are intentional placeholders |
