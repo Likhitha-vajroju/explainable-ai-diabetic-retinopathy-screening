@@ -27,6 +27,9 @@ a { color: inherit; text-decoration: none; }
 .brand strong { display: block; font: 800 17px "Segoe UI", sans-serif; letter-spacing: -.4px; }
 .brand small { display: block; margin-top: 2px; color: #78908e; font-size: 9px; font-weight: 700; letter-spacing: 1.15px; }
 .topbar-right { display: flex; align-items: center; gap: 25px; color: #617277; font-size: 12px; }
+.main-nav { display: flex; align-items: center; gap: 5px; }
+.nav-link { padding: 8px 10px; color: #607477; border: 1px solid transparent; border-radius: 8px; background: transparent; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.nav-link:hover,.nav-link.active { color: #087f78; border-color: #d9ebe6; background: #f0f8f5; }
 .service-status,.topbar-shield { display: inline-flex; align-items: center; gap: 8px; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #b8c5c4; display: inline-block; }
 .service-status.online .status-dot,.footer-status .status-dot { background: #22a785; box-shadow: 0 0 0 3px #22a7851c; }
@@ -174,6 +177,41 @@ h1,h2,h3,p { margin-top: 0; }
 .report-card p { margin: 0; color: #7b898a; font-size: 10px; }
 .report-actions { display: flex; gap: 7px; }
 .report-preview { width: 100%; max-height: 420px; overflow: auto; margin: 15px 0 0; padding: 16px; color: #42595a; border: 1px solid #e7eeec; border-radius: 9px; background: #f8fbfa; white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/1.6 "Aptos", "Segoe UI",sans-serif; }
+.record-save { display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,.8fr); gap: 13px 24px; align-items: start; padding: 20px 22px; }
+.record-save-copy h3 { margin: 5px 0; font: 700 16px "Segoe UI",sans-serif; }
+.record-save-copy p,.form-hint { margin: 0; color: #78898a; font-size: 10px; line-height: 1.5; }
+.record-save-fields { display: grid; gap: 7px; }
+.record-save-fields label,.history-lookup label { color: #43595b; font-size: 10px; font-weight: 700; }
+.record-save-fields label span { color: #899796; font-weight: 400; }
+.record-save-fields input,.record-save-fields select,.history-search-row input { width: 100%; min-height: 40px; padding: 0 11px; color: #31494b; border: 1px solid #dbe6e3; border-radius: 8px; background: #fff; font-size: 11px; }
+.record-save-fields input:focus,.record-save-fields select:focus,.history-search-row input:focus { outline: 2px solid #85c6b6; outline-offset: 1px; }
+.record-save .inline-error,.record-save .history-save-success { grid-column: 1 / -1; margin: 0; }
+.record-save>.button { grid-column: 1 / -1; justify-self: start; }
+.history-save-success { display: flex; align-items: center; gap: 8px; color: #347760; font-size: 11px; }
+.history-page { display: grid; gap: 16px; margin: 38px 0 55px; }
+.history-heading { margin: 0 2px 4px; }
+.history-heading .section-kicker,.history-records .section-kicker,.trend-panel .section-kicker { color: #6d9892; }
+.history-heading h1 { margin: 6px 0 7px; font: 700 27px "Segoe UI",sans-serif; letter-spacing: -.6px; }
+.history-heading p { margin: 0; color: #6b7c81; font-size: 12px; line-height: 1.5; }
+.history-lookup { display: grid; gap: 8px; padding: 20px 22px; }
+.history-search-row { display: flex; gap: 9px; }
+.history-search-row input { flex: 1; min-width: 0; }
+.history-lookup .form-hint { margin-top: 1px; }
+.history-empty { padding: 22px; color: #6b7c81; font-size: 12px; }
+.trend-panel,.history-records { padding: 21px 22px; }
+.trend-icon { font-size: 22px; line-height: 1; }
+.trend-chart { width: 100%; margin-top: 14px; overflow: hidden; }
+.trend-chart svg { width: 100%; height: auto; overflow: visible; }
+.trend-gridline { stroke: #e8efed; stroke-width: 1; }
+.trend-axis-label,.trend-date-label { fill: #78898a; font: 10px "Aptos","Segoe UI",sans-serif; }
+.trend-line { fill: none; stroke: #13877b; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.trend-point { fill: #fff; stroke: #13877b; stroke-width: 3; }
+.trend-caveat,.history-footnote { margin: 10px 0 0; color: #7d8b8c; font-size: 10px; line-height: 1.5; }
+.history-table-wrap { width: 100%; margin-top: 18px; overflow-x: auto; }
+.history-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+.history-table th { padding: 10px 12px; color: #728481; border-bottom: 1px solid #e7eeec; font-size: 9px; font-weight: 700; }
+.history-table td { padding: 12px; color: #41595a; border-bottom: 1px solid #f0f3f2; font-size: 10px; }
+.history-table tbody tr:last-child td { border-bottom: 0; }
 .footer { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 13px max(5.2vw, calc((100vw - 1240px)/2)); border-top: 1px solid #e7edeb; background: #fff; }
 .footer-brand { display: flex; align-items: center; gap: 8px; white-space: nowrap; }.footer-brand strong { font: 700 12px "Segoe UI",sans-serif; }
 .brand-mark.small { width: 29px; height: 29px; border-radius: 9px; }
@@ -189,11 +227,13 @@ h1,h2,h3,p { margin-top: 0; }
   .report-card { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 620px) {
-  .topbar { height: 65px; padding: 0 18px; }
+  .topbar { height: 65px; padding: 0 12px; }
   .brand-mark { width: 37px; height: 37px; }
   .brand strong { font-size: 15px; }
   .brand small { font-size: 7px; }
-  .topbar-right { gap: 0; font-size: 0; }
+  .topbar-right { gap: 7px; font-size: 0; }
+  .main-nav { gap: 0; }
+  .nav-link { padding: 7px 5px; font-size: 9px; }
   .topbar-shield { display: none; }
   .service-status { width: 12px; height: 12px; }
   .service-status .status-dot { width: 9px; height: 9px; }
@@ -207,6 +247,13 @@ h1,h2,h3,p { margin-top: 0; }
   .workflow-heading h2,.result-toolbar h2 { font-size: 21px; }
   .workflow-heading p { max-width: none; margin: 0; text-align: left; }
   .upload-card { padding: 19px 15px 16px; }
+  .record-save { grid-template-columns: 1fr; padding: 18px 15px; }
+  .history-page { margin-top: 27px; }
+  .history-heading h1 { font-size: 23px; }
+  .history-search-row { align-items: stretch; flex-direction: column; }
+  .history-search-row .button { width: 100%; }
+  .trend-panel,.history-records { padding: 17px 14px; }
+  .trend-date-label { font-size: 8px; }
   .card-heading { align-items: flex-start; }
   .card-heading h3 { font-size: 14px; }
   .card-heading p { font-size: 10px; line-height: 1.5; }

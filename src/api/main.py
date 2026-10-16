@@ -11,13 +11,15 @@ import tempfile
 import warnings
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Literal
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from PIL import Image, UnidentifiedImageError
 from starlette.concurrency import run_in_threadpool
 
+from src.api.screening_history import ScreeningHistoryStore
 from src.dr_classification.classifier import (
     load_model_checkpoint,
 )
@@ -44,6 +46,25 @@ CONTENT_TYPES_BY_FORMAT = {
     "TIFF": "image/tiff",
     "BMP": "image/bmp",
 }
+
+ReviewerDecision = Literal[
+    "agrees",
+    "disagrees",
+    "requires_additional_review",
+]
+
+
+class ScreeningRecordCreate(BaseModel):
+    anonymous_patient_id: str = Field(
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$",
+    )
+    dr_level: int = Field(ge=0, le=4)
+    referable: bool
+    confidence: float = Field(ge=0, le=1)
+    image_quality_score: float = Field(ge=0, le=100)
+    reviewer_decision: ReviewerDecision | None = None
 
 
 def _configured_temperature() -> float | None:
@@ -117,6 +138,7 @@ def _validate_image(data: bytes) -> tuple[str, tuple[int, int]]:
 def create_app(
     checkpoint_path: str | Path | None = None,
     calibration_temperature: float | None = None,
+    history_db_path: str | Path | None = None,
 ) -> FastAPI:
     configured_checkpoint = Path(
         checkpoint_path
@@ -131,10 +153,17 @@ def create_app(
         if calibration_temperature is not None
         else _configured_temperature()
     )
+    configured_history_path = Path(
+        history_db_path
+        if history_db_path is not None
+        else os.environ.get("DR_HISTORY_DB", "data/screening_history.sqlite3")
+    )
+    history_store = ScreeningHistoryStore(configured_history_path)
     analysis_lock = asyncio.Lock()
 
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
+        history_store.initialize()
         application.state.model = None
         application.state.config = None
         application.state.device = None
@@ -188,6 +217,28 @@ def create_app(
             "model_ready": ready,
             "model_error": application.state.model_error,
             "calibration_available": configured_temperature is not None,
+        }
+
+    @application.post("/api/screening-history", status_code=201)
+    async def create_screening_history_record(
+        record: ScreeningRecordCreate,
+    ) -> dict[str, Any]:
+        return await run_in_threadpool(
+            history_store.create_record,
+            **record.model_dump(),
+        )
+
+    @application.get("/api/screening-history/{anonymous_patient_id}")
+    async def get_screening_history(
+        anonymous_patient_id: str,
+    ) -> dict[str, Any]:
+        records = await run_in_threadpool(
+            history_store.get_patient_records,
+            anonymous_patient_id,
+        )
+        return {
+            "anonymous_patient_id": anonymous_patient_id,
+            "records": records,
         }
 
     @application.post("/api/analyze")

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import ScreeningHistoryPage from "./ScreeningHistoryPage.jsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 const MAX_BYTES = 15 * 1024 * 1024;
@@ -59,6 +60,12 @@ function App() {
   const [dragging, setDragging] = useState(false);
   const [showEnhanced, setShowEnhanced] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [page, setPage] = useState("screening");
+  const [recordPatientId, setRecordPatientId] = useState("");
+  const [reviewerDecision, setReviewerDecision] = useState("");
+  const [historySaveLoading, setHistorySaveLoading] = useState(false);
+  const [historySaveError, setHistorySaveError] = useState("");
+  const [savedHistoryPatientId, setSavedHistoryPatientId] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -88,6 +95,7 @@ function App() {
     if (!candidate) return;
     setResult(null);
     setArtifacts({});
+    setSavedHistoryPatientId("");
     setShowEnhanced(false);
     const validationError = fileError(candidate);
     if (validationError) {
@@ -108,6 +116,8 @@ function App() {
     setError("");
     setResult(null);
     setArtifacts({});
+    setHistorySaveError("");
+    setSavedHistoryPatientId("");
     try {
       const formData = new FormData();
       formData.append("image", file);
@@ -129,12 +139,49 @@ function App() {
     }
   }
 
+  async function saveScreeningRecord(event) {
+    event.preventDefault();
+    const anonymousPatientId = recordPatientId.trim();
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(anonymousPatientId)) {
+      setHistorySaveError("Enter an anonymous ID using letters, numbers, hyphens, or underscores only.");
+      return;
+    }
+
+    setHistorySaveLoading(true);
+    setHistorySaveError("");
+    try {
+      const response = await fetch(`${API_BASE}/api/screening-history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          anonymous_patient_id: anonymousPatientId,
+          dr_level: prediction.grade,
+          referable: screening.referable,
+          confidence: prediction.raw_confidence,
+          image_quality_score: quality.score,
+          reviewer_decision: reviewerDecision || null,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(typeof payload.detail === "string" ? payload.detail : "Screening result could not be saved.");
+      }
+      setSavedHistoryPatientId(payload.anonymous_patient_id);
+    } catch (reason) {
+      setHistorySaveError(reason.message || "Unable to save screening result history.");
+    } finally {
+      setHistorySaveLoading(false);
+    }
+  }
+
   const screening = result?.referable_screening;
   const prediction = result?.dr_prediction;
   const quality = result?.image_quality;
   const gradcam = result?.gradcam;
   const retinal = result?.retinal_lesion_evidence;
   const recommendations = screening?.recommendation || "";
+  const historyRecordSaved = Boolean(savedHistoryPatientId)
+    && savedHistoryPatientId === recordPatientId.trim();
 
   return (
     <div className="app-shell">
@@ -144,6 +191,10 @@ function App() {
           <span><strong>RetinaCare</strong><small>SCREENING RESEARCH PROTOTYPE</small></span>
         </a>
         <div className="topbar-right">
+          <nav className="main-nav" aria-label="Main navigation">
+            <button className={page === "screening" ? "nav-link active" : "nav-link"} onClick={() => setPage("screening")}>New screening</button>
+            <button className={page === "history" ? "nav-link active" : "nav-link"} onClick={() => setPage("history")}>Screening history</button>
+          </nav>
           <span className={`service-status ${health.model_ready ? "online" : "offline"}`}>
             <span className="status-dot" />
             {health.loading ? "Connecting to service" : health.model_ready ? "Analysis service ready" : "Service unavailable"}
@@ -153,7 +204,7 @@ function App() {
       </header>
 
       <main>
-        <section className="hero">
+        {page === "screening" && <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow"><span className="eyebrow-line" /> DIABETIC RETINOPATHY · IMAGE REVIEW</p>
             <h1>Screen with clarity.<br /><span>Review with confidence.</span></h1>
@@ -170,14 +221,14 @@ function App() {
             <div className="retina-disc"><div className="retina-core" /><i /><i /><i /><i /><i /><i /></div>
             <div className="art-label"><span className="status-dot" /> IMAGE REVIEW WORKSPACE</div>
           </div>
-        </section>
+        </section>}
 
-        <section className="workflow-heading">
+        {page === "screening" && <section className="workflow-heading">
           <div><span className="section-kicker">SCREENING WORKFLOW</span><h2>New image review</h2></div>
           <p>Results are generated by the connected research model—not sample values.</p>
-        </section>
+        </section>}
 
-        {!result && (
+        {page === "screening" && !result && (
           <section className="upload-card">
             <div className="card-heading">
               <div className="step-number">01</div>
@@ -223,7 +274,7 @@ function App() {
           </section>
         )}
 
-        {result && (
+        {page === "screening" && result && (
           <section className="results">
             <div className="result-toolbar">
               <div><span className="section-kicker">IMAGE REVIEW COMPLETE</span><h2>Screening summary</h2></div>
@@ -233,6 +284,42 @@ function App() {
               </div>
             </div>
             <div className="disclaimer-strip"><Icon name="shield" size={18} /><span><strong>AI-assisted screening — not a definitive diagnosis.</strong> Performance depends on dataset and validation conditions.</span></div>
+            <form className="panel record-save" onSubmit={saveScreeningRecord}>
+              <div className="record-save-copy">
+                <span className="section-kicker">OPTIONAL LOCAL HISTORY</span>
+                <h3>Save this screening result</h3>
+                <p>Only the anonymous ID and screening fields below are saved locally. The image is not stored.</p>
+              </div>
+              <div className="record-save-fields">
+                <label htmlFor="record-patient-id">Anonymous patient ID</label>
+                <input
+                  id="record-patient-id"
+                  value={recordPatientId}
+                  onChange={(event) => { setRecordPatientId(event.target.value); setSavedHistoryPatientId(""); }}
+                  placeholder="e.g. ANON-1042"
+                  maxLength={64}
+                  autoComplete="off"
+                />
+                <p className="form-hint">Do not enter a name, contact detail, or other identifying information.</p>
+                <label htmlFor="reviewer-decision">Reviewer decision <span>(optional)</span></label>
+                <select id="reviewer-decision" value={reviewerDecision} onChange={(event) => { setReviewerDecision(event.target.value); setSavedHistoryPatientId(""); }}>
+                  <option value="">Not recorded</option>
+                  <option value="agrees">Agrees with screening result</option>
+                  <option value="disagrees">Disagrees with screening result</option>
+                  <option value="requires_additional_review">Requires additional review</option>
+                </select>
+              </div>
+              {historySaveError && <div className="inline-error" role="alert">{historySaveError}</div>}
+              {savedHistoryPatientId && (
+                <div className="history-save-success" role="status">
+                  Screening result saved locally.
+                  <button type="button" className="text-button" onClick={() => setPage("history")}>View this screening-result history</button>
+                </div>
+              )}
+              <button className="button button-primary" type="submit" disabled={historySaveLoading || historyRecordSaved}>
+                {historySaveLoading ? "Saving…" : historyRecordSaved ? "Screening result saved" : "Save screening result"}
+              </button>
+            </form>
             <div className={`referral-banner ${screening?.referable ? "referable" : "nonreferable"}`}>
               <div className="referral-icon"><Icon name={screening?.referable ? "alert" : "check"} size={22} /></div>
               <div><span className="banner-label">{screening?.referable ? "REFERABLE SCREENING RESULT" : "NON-REFERABLE UNDER PROJECT DEFINITION"}</span><h3>{recommendations}</h3><p>Screening grouping: Levels 0–1 non-referable · Levels 2–4 referable</p></div>
@@ -316,6 +403,13 @@ function App() {
               {reportOpen && artifacts.screening_report_markdown && <pre className="report-preview">{decodeBase64Utf8(artifacts.screening_report_markdown.base64)}</pre>}
             </article>
           </section>
+        )}
+
+        {page === "history" && (
+          <ScreeningHistoryPage
+            apiBase={API_BASE}
+            initialPatientId={savedHistoryPatientId}
+          />
         )}
       </main>
 

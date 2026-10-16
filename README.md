@@ -1,6 +1,6 @@
 # Explainable AI for Diabetic Retinopathy Screening in Rural India
 
-A research-oriented project to explore how AI can support diabetic retinopathy (DR) screening and referral workflows in settings with limited access to ophthalmologists. It does not contain a trained model or clinical results and is not a screening application.
+A research-oriented project to explore how AI can support diabetic retinopathy (DR) screening and referral workflows in settings with limited access to ophthalmologists. It does not contain a trained model or clinical results and is not a clinically validated screening application.
 
 ## The real-world problem
 
@@ -25,6 +25,7 @@ The intended system is an AI-assisted screening and referral-support platform. A
 | Explainable AI | Present model evidence in a way that can be inspected, with limitations clearly stated. |
 | Lesion and retinal analysis | Explore analysis of clinically relevant retinal structures and lesions. |
 | Reporting | Combine image, classification, confidence, and visual-evidence outputs into review-oriented JSON, Markdown, and PDF reports without presenting them as a diagnosis. |
+| Screening-result history | Store minimal, optional screening history in a local SQLite database for lookup by anonymous patient ID and display previous screening results without implying confirmed disease progression. |
 | Utilities | Hold shared, non-domain-specific helpers as the project grows. |
 | Evaluation | Define reproducible technical evaluation and, later, appropriate clinical evaluation protocols. |
 | Frontend and simulation | Reserve space for future user workflows and deployment/workflow simulation. |
@@ -35,7 +36,7 @@ The intended users are screening-program staff, trained health workers, optometr
 
 ## Technology stack
 
-The current project uses Python, Pillow, and NumPy for image handling and preprocessing, PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations, FastAPI for the local API, and React/Vite for the review UI.
+The current project uses Python, Pillow, and NumPy for image handling and preprocessing, PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations, FastAPI and SQLite for the local API and optional screening-result history, and React/Vite for the review UI.
 
 ## Project architecture
 
@@ -53,10 +54,20 @@ models/                        Model artifact documentation; weights are not sto
 evaluation/                    Evaluation plans and future evaluation code
 reports/                       Report documentation and future generated reports
 frontend/                      React/Vite screening review interface
+data/                           Local prototype data; screening history database is ignored by Git
 simulation/                    Workflow and deployment simulation
 tests/                         Automated tests
 docs/                          Project and research documentation
 ```
+
+The optional screening-history module stores only a pre-assigned anonymous ID,
+screening timestamp, predicted DR level, referable status, model confidence,
+image-quality score, and optional reviewer decision. Uploaded images and
+unnecessary personal information are not saved in screening history. Records
+are kept in `data/screening_history.sqlite3` by default (or at the path set by
+`DR_HISTORY_DB`). Treat this local prototype database as sensitive and use only
+anonymous identifiers. See [`frontend/README.md`](frontend/README.md) for the
+history workflow and local setup.
 
 ## Responsible AI and medical disclaimer
 

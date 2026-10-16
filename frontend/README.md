@@ -21,8 +21,17 @@ python -m uvicorn src.api.main:app --reload --host 127.0.0.1 --port 8000
 Omit `DR_CALIBRATION_TEMPERATURE` if no fitted calibration temperature is
 available. The health endpoint reports when a checkpoint is missing or failed
 to load. The API accepts JPEG, PNG, TIFF, and BMP uploads up to 15 MB and
-25 megapixels. Uploads and generated report files are held in a temporary
-directory for the request and are not persisted by the service.
+25 megapixels. Uploaded images and generated report files are held in a
+temporary directory for the request and are not persisted by the service.
+
+Screening-result history is stored separately in a local SQLite database at
+`data/screening_history.sqlite3`. Set `DR_HISTORY_DB` before starting the API
+to choose another database path. The database contains only a pre-assigned
+anonymous patient ID, screening timestamp, predicted DR level, referable
+status, raw model confidence, image-quality score, and optional reviewer
+decision. It does not contain images, names, contact details, or demographics.
+Use anonymous IDs only and protect the local database as sensitive prototype
+data.
 
 ## Start the frontend
 
@@ -47,8 +56,12 @@ preprocessed image, model grade and probabilities, referable grouping,
 calibrated confidence when configured, Grad-CAM and retinal evidence when
 available, and JSON/Markdown/PDF screening reports. Optional visual-evidence
 failures are surfaced as unavailable without discarding a successful
-classifier result. Unsupported or malformed uploads and unavailable models
-return explicit errors.
+classifier result. To save the optional screening-result history, enter an
+anonymous ID and (if available) a reviewer decision after analysis. Use the
+Screening history page to look up previous results and view the predicted DR
+level trend. Changes between predicted grades are changes in screening results
+only; they are not confirmed disease progression. Unsupported or malformed
+uploads and unavailable models return explicit errors.
 
 This is an AI-assisted screening research prototype, not a definitive
 diagnosis or treatment recommendation. It is not clinically validated;
