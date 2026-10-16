@@ -1,0 +1,23 @@
+{
+  "annual_patient_volume": 100000,
+  "daily_arrival_rate": null,
+  "simulation_days": 365,
+  "operating_hours_per_day": 8,
+  "image_acquisition_rate_per_hour": 40,
+  "image_quality_assessment_time_seconds": 0.0063,
+  "ai_processing_time_seconds": 2.5,
+  "image_transmission_size_mb": 5,
+  "available_bandwidth_mbps": 20,
+  "number_of_ophthalmologists": 8,
+  "review_time_per_case_minutes": 15,
+  "processing_capacity": 8,
+  "referable_fraction": 0.2,
+  "ungradable_fraction": 0.05,
+  "reviewer_outcome_probabilities": {
+    "ai_prediction_accepted": 0.75,
+    "ai_prediction_modified": 0.15,
+    "image_requires_manual_review": 0.07,
+    "image_ungradable": 0.03
+  },
+  "random_seed": 2026
+}

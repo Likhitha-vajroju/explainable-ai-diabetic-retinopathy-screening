@@ -26,6 +26,8 @@ The intended system is an AI-assisted screening and referral-support platform. A
 | Lesion and retinal analysis | Explore analysis of clinically relevant retinal structures and lesions. |
 | Reporting | Combine image, classification, confidence, and visual-evidence outputs into review-oriented JSON, Markdown, and PDF reports without presenting them as a diagnosis. |
 | Screening-result history | Store minimal, optional screening history in a local SQLite database for lookup by anonymous patient ID and display previous screening results without implying confirmed disease progression. |
+| Rural telemedicine resource simulation | Explore synthetic PHC-to-district screening workload, resource capacity, and waiting-time scenarios; not a real-world service-capacity claim. |
+| Human review | Let reviewers record screening-result disposition; final clinical interpretation remains the responsibility of a qualified clinician. |
 | Utilities | Hold shared, non-domain-specific helpers as the project grows. |
 | Evaluation | Define reproducible technical evaluation and, later, appropriate clinical evaluation protocols. |
 | Frontend and simulation | Reserve space for future user workflows and deployment/workflow simulation. |
@@ -36,7 +38,7 @@ The intended users are screening-program staff, trained health workers, optometr
 
 ## Technology stack
 
-The current project uses Python, Pillow, and NumPy for image handling and preprocessing, PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations, FastAPI and SQLite for the local API and optional screening-result history, and React/Vite for the review UI.
+The current project uses Python, Pillow, and NumPy for image handling and preprocessing, PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations, FastAPI and SQLite for the local API and optional screening-result history, React/Vite for the review UI, and Python/MATLAB scripts for resource-allocation simulation.
 
 ## Project architecture
 
@@ -144,5 +146,8 @@ experimental DR classifier with calibration and referable screening support,
 standalone retinal candidate analysis, Grad-CAM visualization, automated
 JSON, Markdown, and PDF reports, and a local FastAPI/React screening review
 application. Grad-CAM shows model attention and is not proof of a clinical
-lesion or a clinical diagnosis. See [frontend/README.md](frontend/README.md)
-for local startup instructions.
+lesion or a clinical diagnosis. The rural telemedicine simulation explores
+synthetic resource configurations and is not proof of real-world service
+capacity. See [frontend/README.md](frontend/README.md) for local startup
+instructions and [simulation/README.md](simulation/README.md) for simulation
+assumptions, usage, outputs, and limitations.
