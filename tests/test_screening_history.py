@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sqlite3
 import tempfile
 import unittest
@@ -85,7 +86,7 @@ class ScreeningHistoryApiTests(unittest.TestCase):
         self.assertTrue(history["records"][0]["screened_at"].endswith("+00:00"))
 
     def test_rejects_identifying_id_and_out_of_range_screening_values(self) -> None:
-        async def exercise_api(directory: Path) -> tuple[int, int]:
+        async def exercise_api(directory: Path) -> tuple[int, int, int, int]:
             application = create_app(
                 checkpoint_path=directory / "missing.pt",
                 history_db_path=directory / "history.sqlite3",
@@ -116,15 +117,36 @@ class ScreeningHistoryApiTests(unittest.TestCase):
                             "image_quality_score": 90,
                         },
                     )
-                    return identifying_id.status_code, invalid_level.status_code
+                    invalid_confidence = await client.post(
+                        "/api/screening-history",
+                        content=json.dumps({
+                            "anonymous_patient_id": "ANON-42",
+                            "dr_level": 1,
+                            "referable": False,
+                            "confidence": float("nan"),
+                            "image_quality_score": 90,
+                        }),
+                        headers={"Content-Type": "application/json"},
+                    )
+                    invalid_lookup = await client.get(
+                        "/api/screening-history/invalid%20case"
+                    )
+                    return (
+                        identifying_id.status_code,
+                        invalid_level.status_code,
+                        invalid_confidence.status_code,
+                        invalid_lookup.status_code,
+                    )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
-            identifying_status, level_status = asyncio.run(
+            identifying_status, level_status, confidence_status, lookup_status = asyncio.run(
                 exercise_api(Path(temporary_directory))
             )
 
         self.assertEqual(identifying_status, 422)
         self.assertEqual(level_status, 422)
+        self.assertEqual(confidence_status, 422)
+        self.assertEqual(lookup_status, 422)
 
     def test_accepts_each_reviewer_outcome(self) -> None:
         async def exercise_api(directory: Path) -> list[dict]:

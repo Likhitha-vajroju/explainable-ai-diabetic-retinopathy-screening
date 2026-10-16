@@ -114,6 +114,9 @@ class TelemedicineSimulationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "annual_patient_volume"):
             run_simulation(SimulationConfig(annual_patient_volume=0))
 
+        with self.assertRaisesRegex(ValueError, "processing_capacity must be an integer"):
+            run_simulation(SimulationConfig(processing_capacity=1.5))
+
         with self.assertRaisesRegex(ValueError, "sum to 1"):
             run_simulation(
                 SimulationConfig(

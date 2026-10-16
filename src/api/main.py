@@ -13,11 +13,14 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Literal
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Path as ApiPath, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image, UnidentifiedImageError
 from starlette.concurrency import run_in_threadpool
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from src.api.screening_history import ScreeningHistoryStore
 from src.dr_classification.classifier import (
@@ -63,8 +66,8 @@ class ScreeningRecordCreate(BaseModel):
     )
     dr_level: int = Field(ge=0, le=4)
     referable: bool
-    confidence: float = Field(ge=0, le=1)
-    image_quality_score: float = Field(ge=0, le=100)
+    confidence: float = Field(ge=0, le=1, allow_inf_nan=False)
+    image_quality_score: float = Field(ge=0, le=100, allow_inf_nan=False)
 
 
 class ReviewerDecisionUpdate(BaseModel):
@@ -213,6 +216,41 @@ def create_app(
         allow_headers=["Content-Type"],
     )
 
+    @application.exception_handler(Exception)
+    async def handle_unexpected_error(
+        request: Request,
+        error: Exception,
+    ) -> JSONResponse:
+        LOGGER.error(
+            "Unhandled API error for %s %s.",
+            request.method,
+            request.url.path,
+            exc_info=(type(error), error, error.__traceback__),
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error. Check the service logs for details."},
+        )
+
+    @application.exception_handler(RequestValidationError)
+    async def handle_request_validation_error(
+        _request: Request,
+        error: RequestValidationError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": [
+                    {
+                        "loc": item["loc"],
+                        "msg": item["msg"],
+                        "type": item["type"],
+                    }
+                    for item in error.errors()
+                ]
+            },
+        )
+
     @application.get("/api/health")
     async def health() -> dict[str, Any]:
         ready = application.state.model is not None
@@ -234,7 +272,11 @@ def create_app(
 
     @application.get("/api/screening-history/{anonymous_patient_id}")
     async def get_screening_history(
-        anonymous_patient_id: str,
+        anonymous_patient_id: str = ApiPath(
+            min_length=1,
+            max_length=64,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$",
+        ),
     ) -> dict[str, Any]:
         records = await run_in_threadpool(
             history_store.get_patient_records,
@@ -247,8 +289,8 @@ def create_app(
 
     @application.put("/api/screening-history/{record_id}/review")
     async def update_reviewer_decision(
-        record_id: int,
         decision: ReviewerDecisionUpdate,
+        record_id: int = ApiPath(gt=0),
     ) -> dict[str, Any]:
         record = await run_in_threadpool(
             history_store.record_reviewer_decision,
@@ -375,11 +417,13 @@ def create_app(
                             "height": original_size[1],
                         },
                     }
-            except (OSError, RuntimeError, ValueError) as error:
+            except HTTPException:
+                raise
+            except Exception as error:
                 LOGGER.exception("Image analysis failed.")
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Image analysis failed: {error}",
+                    detail="Image analysis failed. Check the service logs for details.",
                 ) from error
 
         try:

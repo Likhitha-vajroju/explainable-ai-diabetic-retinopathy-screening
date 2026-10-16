@@ -41,6 +41,16 @@ class SimulationConfig:
     random_seed: int = 2026
 
     def validate(self) -> None:
+        for name in (
+            "annual_patient_volume",
+            "simulation_days",
+            "number_of_ophthalmologists",
+            "processing_capacity",
+            "random_seed",
+        ):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError(f"{name} must be an integer.")
         positive = {
             "annual_patient_volume": self.annual_patient_volume,
             "simulation_days": self.simulation_days,

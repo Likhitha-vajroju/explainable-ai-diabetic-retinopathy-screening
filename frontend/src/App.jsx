@@ -68,17 +68,29 @@ function App() {
   const [reviewError, setReviewError] = useState("");
   const [reviewedAt, setReviewedAt] = useState("");
 
+  async function checkServiceHealth(isCurrent = () => true) {
+    if (isCurrent()) setHealth({ loading: true });
+    try {
+      const response = await fetch(`${API_BASE}/api/health`);
+      if (!response.ok) throw new Error("The screening API is not responding.");
+      const data = await response.json();
+      if (isCurrent()) setHealth({ ...data, loading: false });
+    } catch (reason) {
+      if (isCurrent()) {
+        setHealth({
+          loading: false,
+          model_ready: false,
+          model_error: reason instanceof Error
+            ? reason.message
+            : "The screening API is not responding.",
+        });
+      }
+    }
+  }
+
   useEffect(() => {
     let active = true;
-    fetch(`${API_BASE}/api/health`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error("The screening API is not responding.");
-        return response.json();
-      })
-      .then((data) => { if (active) setHealth({ ...data, loading: false }); })
-      .catch((reason) => {
-        if (active) setHealth({ loading: false, model_ready: false, model_error: reason.message });
-      });
+    checkServiceHealth(() => active);
     return () => { active = false; };
   }, []);
 
@@ -123,12 +135,15 @@ function App() {
     setReviewRecord(null);
     setReviewedAt("");
     setReviewerDecision("");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 120_000);
     try {
       const formData = new FormData();
       formData.append("image", file);
       const response = await fetch(`${API_BASE}/api/analyze`, {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -138,8 +153,13 @@ function App() {
       setResult(payload.result);
       setArtifacts(payload.artifacts || {});
     } catch (reason) {
-      setError(reason.message || "Unable to reach the screening service. Check that the backend is running.");
+      setError(
+        reason instanceof Error && reason.name === "AbortError"
+          ? "Analysis timed out after two minutes. Check the service and try again."
+          : reason.message || "Unable to reach the screening service. Check that the backend is running.",
+      );
     } finally {
+      window.clearTimeout(timeout);
       setLoading(false);
     }
   }
@@ -284,7 +304,7 @@ function App() {
               )}
             </div>
             {error && <div className="inline-error" role="alert"><Icon name="alert" size={17} />{error}</div>}
-            {!health.loading && !health.model_ready && <div className="service-notice" role="status"><Icon name="alert" size={17} /><span><strong>Model not ready.</strong> {health.model_error || "Start the API with a configured trained checkpoint before analyzing."}</span></div>}
+            {!health.loading && !health.model_ready && <div className="service-notice" role="status"><Icon name="alert" size={17} /><span><strong>Model not ready.</strong> {health.model_error || "Start the API with a configured trained checkpoint before analyzing."} <button className="text-button" type="button" onClick={() => checkServiceHealth()}>Check again</button></span></div>}
             <div className="upload-actions">
               <span className="privacy-note"><Icon name="shield" size={16} /> Image processed for this request; not stored by the API.</span>
               <button className="button button-primary" onClick={analyze} disabled={!file || loading || !health.model_ready}>
