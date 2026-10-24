@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -94,6 +95,7 @@ class ApiReadinessTests(unittest.TestCase):
         async def check_health(checkpoint: Path) -> dict[str, object]:
             application = create_app(checkpoint_path=checkpoint)
             async with application.router.lifespan_context(application):
+                await application.state.model_loading_task
                 transport = ASGITransport(app=application)
                 async with AsyncClient(
                     transport=transport,
@@ -114,6 +116,42 @@ class ApiReadinessTests(unittest.TestCase):
         self.assertFalse(health["model_ready"])
         self.assertEqual(health["status"], "model_unavailable")
         self.assertIn("invalid checkpoint content", health["model_error"])
+
+    def test_health_is_available_while_checkpoint_loads(self) -> None:
+        async def exercise_api(checkpoint: Path) -> tuple[dict, dict]:
+            application = create_app(checkpoint_path=checkpoint)
+            release_loader = threading.Event()
+
+            def slow_loader(_checkpoint: Path) -> tuple[object, object, str]:
+                release_loader.wait(timeout=5)
+                return object(), object(), "cpu"
+
+            with patch(
+                "src.api.main.load_model_checkpoint",
+                side_effect=slow_loader,
+            ):
+                async with application.router.lifespan_context(application):
+                    transport = ASGITransport(app=application)
+                    async with AsyncClient(
+                        transport=transport,
+                        base_url="http://testserver",
+                    ) as client:
+                        loading_response = await client.get("/api/health")
+                        release_loader.set()
+                        await application.state.model_loading_task
+                        ready_response = await client.get("/api/health")
+                        return loading_response.json(), ready_response.json()
+
+        with tempfile.TemporaryDirectory() as directory:
+            checkpoint = Path(directory) / "available.pt"
+            checkpoint.touch()
+            loading, ready = asyncio.run(exercise_api(checkpoint))
+
+        self.assertEqual(loading["status"], "loading")
+        self.assertTrue(loading["model_loading"])
+        self.assertFalse(loading["model_ready"])
+        self.assertEqual(ready["status"], "ready")
+        self.assertTrue(ready["model_ready"])
 
     def test_rejects_unsupported_upload_before_analysis(self) -> None:
         async def upload_unsupported(checkpoint: Path) -> tuple[int, int]:

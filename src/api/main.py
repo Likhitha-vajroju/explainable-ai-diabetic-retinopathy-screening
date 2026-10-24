@@ -23,9 +23,6 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.api.screening_history import ScreeningHistoryStore
-from src.dr_classification.classifier import (
-    load_model_checkpoint,
-)
 from src.preprocessing.image_pipeline import preprocess_image
 from src.reporting.screening_report import (
     create_screening_report,
@@ -85,6 +82,12 @@ def _configured_temperature() -> float | None:
     if not 0 < temperature < float("inf"):
         raise RuntimeError("DR_CALIBRATION_TEMPERATURE must be finite and positive.")
     return temperature
+
+
+def load_model_checkpoint(checkpoint_path: str | Path) -> tuple[Any, Any, Any]:
+    from src.dr_classification.classifier import load_model_checkpoint as load_checkpoint
+
+    return load_checkpoint(checkpoint_path)
 
 
 def _encode_file(path: Path, media_type: str) -> dict[str, str]:
@@ -175,22 +178,45 @@ def create_app(
         application.state.config = None
         application.state.device = None
         application.state.model_error = None
+        application.state.model_status = "model_unavailable"
+        application.state.model_loading_task = None
         if configured_checkpoint.is_file():
-            try:
-                (
-                    application.state.model,
-                    application.state.config,
-                    application.state.device,
-                ) = load_model_checkpoint(configured_checkpoint)
-            except (OSError, RuntimeError, ValueError) as error:
-                application.state.model_error = str(error)
-                LOGGER.exception("Could not load DR classifier checkpoint.")
+            application.state.model_status = "loading"
+
+            async def load_configured_model() -> None:
+                try:
+                    model, config, device = await run_in_threadpool(
+                        load_model_checkpoint,
+                        configured_checkpoint,
+                    )
+                except Exception as error:
+                    application.state.model_error = str(error)
+                    application.state.model_status = "model_unavailable"
+                    LOGGER.exception("Could not load DR classifier checkpoint.")
+                else:
+                    application.state.model = model
+                    application.state.config = config
+                    application.state.device = device
+                    application.state.model_status = "ready"
+
+            application.state.model_loading_task = asyncio.create_task(
+                load_configured_model()
+            )
         else:
             application.state.model_error = (
                 f"Classifier checkpoint not found: {configured_checkpoint}"
             )
             LOGGER.error(application.state.model_error)
-        yield
+        try:
+            yield
+        finally:
+            loading_task = application.state.model_loading_task
+            if loading_task is not None and not loading_task.done():
+                loading_task.cancel()
+                try:
+                    await loading_task
+                except asyncio.CancelledError:
+                    pass
 
     application = FastAPI(
         title="AI-assisted DR screening API",
@@ -255,8 +281,9 @@ def create_app(
     async def health() -> dict[str, Any]:
         ready = application.state.model is not None
         return {
-            "status": "ready" if ready else "model_unavailable",
+            "status": "ready" if ready else application.state.model_status,
             "model_ready": ready,
+            "model_loading": application.state.model_status == "loading",
             "model_error": application.state.model_error,
             "calibration_available": configured_temperature is not None,
         }

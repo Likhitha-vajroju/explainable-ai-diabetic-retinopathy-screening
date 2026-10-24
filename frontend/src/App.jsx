@@ -95,6 +95,12 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (health.loading || health.status !== "loading") return undefined;
+    const timer = window.setTimeout(() => checkServiceHealth(), 3000);
+    return () => window.clearTimeout(timer);
+  }, [health.loading, health.status]);
+
+  useEffect(() => {
     if (!file) {
       setPreview("");
       return undefined;
@@ -238,7 +244,7 @@ function App() {
           </nav>
           <span className={`service-status ${health.model_ready ? "online" : "offline"}`}>
             <span className="status-dot" />
-            {health.loading ? "Connecting to service" : health.model_ready ? "Analysis service ready" : "Service unavailable"}
+            {health.loading ? "Connecting to service" : health.model_ready ? "Analysis service ready" : health.status === "loading" ? "Loading model" : "Service unavailable"}
           </span>
           <span className="topbar-shield"><Icon name="shield" size={17} /> Research use</span>
         </div>
@@ -304,7 +310,8 @@ function App() {
               )}
             </div>
             {error && <div className="inline-error" role="alert"><Icon name="alert" size={17} />{error}</div>}
-            {!health.loading && !health.model_ready && <div className="service-notice" role="status"><Icon name="alert" size={17} /><span><strong>Model not ready.</strong> {health.model_error || "Start the API with a configured trained checkpoint before analyzing."} <button className="text-button" type="button" onClick={() => checkServiceHealth()}>Check again</button></span></div>}
+            {!health.loading && !health.model_ready && health.status === "loading" && <div className="service-notice" role="status"><Icon name="alert" size={17} /><span><strong>Model is loading.</strong> The API is online; image analysis will be enabled when checkpoint loading completes.</span></div>}
+            {!health.loading && !health.model_ready && health.status !== "loading" && <div className="service-notice" role="status"><Icon name="alert" size={17} /><span><strong>Model not ready.</strong> {health.model_error || "Start the API with a configured trained checkpoint before analyzing."} <button className="text-button" type="button" onClick={() => checkServiceHealth()}>Check again</button></span></div>}
             <div className="upload-actions">
               <span className="privacy-note"><Icon name="shield" size={16} /> Image processed for this request; not stored by the API.</span>
               <button className="button button-primary" onClick={analyze} disabled={!file || loading || !health.model_ready}>

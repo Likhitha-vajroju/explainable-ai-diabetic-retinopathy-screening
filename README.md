@@ -189,6 +189,11 @@ restarts or redeployments unless a persistent disk or external database is
 configured. This prototype has no authentication and should not be deployed
 with identifiable patient data or treated as a clinical service.
 
+The API binds before loading PyTorch and the configured checkpoint in a
+background task. `/api/health` reports `"status": "loading"` while the model
+initializes; image analysis becomes available once `"model_ready"` is `true`.
+The frontend checks readiness during model loading.
+
 ## Run the application
 
 Start the API from the repository root in one terminal. Point `DR_CHECKPOINT`
