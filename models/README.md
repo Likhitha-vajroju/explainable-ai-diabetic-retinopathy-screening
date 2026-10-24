@@ -1,10 +1,16 @@
 # Model artifacts and requirements
 
-This directory is reserved for local model artifacts. Trained weights and
-checkpoints are excluded from version control; no trained DR checkpoint is
-distributed with this repository. The application can start without a
-checkpoint, but image analysis remains unavailable until a valid one is
-configured.
+This directory contains an experimental checkpoint at
+`checkpoints/dr_resnet18/best_model.pt`, its training metrics in
+`checkpoints/dr_resnet18/history.csv`, and a training-curve visualization in
+`checkpoints/dr_resnet18/training_curves.png`. These artifacts are provided
+for research and software demonstration, not clinical use. The metrics are
+not clinical validation, and dataset provenance, label mapping, and training
+configuration should be verified before drawing conclusions or redistributing
+the artifacts.
+
+The application can start without a checkpoint, but image analysis remains
+unavailable until a compatible checkpoint is configured.
 
 ## Application checkpoint
 
@@ -40,7 +46,5 @@ does not alter the predicted grade or referral group.
 See
 [src/dr_classification/README.md](../src/dr_classification/README.md) for
 dataset preparation, training, checkpoint selection, inference, evaluation,
-and label/data limitations. Before distributing an artifact, document its
-provenance, license, training configuration, dataset split, validation-fitted
-calibration (if any), intended use, and limitations. Do not present a local
-checkpoint or measured dataset metrics as clinical validation.
+and label/data limitations. Do not present this checkpoint or its training
+metrics as clinical validation.

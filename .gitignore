@@ -72,3 +72,8 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Explicitly published experimental checkpoint and companion training artifacts
+!models/checkpoints/dr_resnet18/best_model.pt
+!models/checkpoints/dr_resnet18/history.csv
+!models/checkpoints/dr_resnet18/training_curves.png
