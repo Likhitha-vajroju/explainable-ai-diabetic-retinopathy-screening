@@ -170,6 +170,15 @@ Do not use `python -m uvicorn backend.main:app`; this repository has no
 `backend` package. The FastAPI application is exported as `app` from
 `src/api/main.py`.
 
+If Render logs `Running 'src.api.main:app'` followed by
+`command not found`, the service is treating the Uvicorn app target as a shell
+command. In the Render Dashboard, open the service's **Settings → Build &
+Deploy → Start Command**, replace the value with the complete command above,
+save, and redeploy. A dashboard Start Command can override this repository's
+`render.yaml`; pushing the Blueprint alone will not change an existing
+service's manually configured command unless that service is managed from the
+Blueprint.
+
 Set `DR_CHECKPOINT` to a compatible checkpoint path if the model artifact is
 available to the service. If it is not configured or cannot be loaded, the
 service can start but reports the model as unavailable and rejects analysis
