@@ -46,7 +46,34 @@ The intended users are screening-program staff, trained health workers, optometr
 
 ## Technology stack
 
-The current project uses Python, Pillow, and NumPy for image handling and preprocessing, PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations, FastAPI and SQLite for the local API and optional screening-result history, React/Vite for the review UI, and Python/MATLAB scripts for resource-allocation simulation.
+The current project uses Python, Pillow, NumPy, and OpenCV-style image processing for preprocessing and validation, PyTorch/torchvision for experimental transfer learning and Grad-CAM visualizations, FastAPI and SQLite for the local API and optional screening-result history, React/Vite for the review UI, and Python/MATLAB scripts for resource-allocation simulation.
+
+## Implementation stack and framework
+
+The implementation follows a modular research prototype architecture:
+
+- Backend API: FastAPI in [src/api/main.py](src/api/main.py) exposes the screening workflow, validates uploaded fundus images, loads a configured checkpoint at startup, and handles analysis and history endpoints through Uvicorn.
+- Model layer: the DR classifier and inference pipeline live under [src/dr_classification](src/dr_classification) and use PyTorch-based model loading and temperature scaling when a fitted calibration value is available.
+- Preprocessing and image quality: [src/preprocessing/image_pipeline.py](src/preprocessing/image_pipeline.py) and [src/image_quality_assessment](src/image_quality_assessment) perform image normalization, enhancement, and quality scoring before inference.
+- Explainability and reporting: [src/explainable_ai](src/explainable_ai) generates Grad-CAM/attention evidence and [src/reporting/screening_report.py](src/reporting/screening_report.py) bundles analysis output into PDF, Markdown, and JSON artifacts.
+- Persistent screening history: [src/api/screening_history.py](src/api/screening_history.py) stores anonymous patient IDs, DR levels, confidence, image-quality scores, and reviewer decisions in a local SQLite database.
+- Resource simulation: the telemedicine and queue model remain separate from the screening API and are implemented in [simulation](simulation) with Python and MATLAB/Simulink support.
+
+## UI development and frontend framework
+
+The frontend is built with React 18 and Vite, using a single-page interface driven by [frontend/src/App.jsx](frontend/src/App.jsx) and styled with [frontend/src/styles.css](frontend/src/styles.css). The UI workflow includes:
+
+- image upload with validation and local preview
+- backend health checks and analysis orchestration
+- result display for DR level, confidence, quality, referable status, and evidence panels
+- generated report downloads and reviewer decision submission
+- anonymous case lookup and historical trend visualization in [frontend/src/ScreeningHistoryPage.jsx](frontend/src/ScreeningHistoryPage.jsx)
+
+This design keeps the frontend thin and presentation-driven while the backend owns validation, model execution, reporting, and database persistence.
+
+## Current implementation outcome
+
+The current workspace was checked by starting the backend and frontend locally. The FastAPI health endpoint at `http://127.0.0.1:8000/api/health` returned HTTP 200 and the Vite frontend at `http://127.0.0.1:5173` also returned HTTP 200. The application is therefore running correctly in its current configuration, with the usual caveat that live image analysis requires a valid `DR_CHECKPOINT` file. Without a compatible checkpoint, the backend reports the model as unavailable while still maintaining the API and UI service layer.
 
 ## Integrated screening workflow
 
@@ -113,6 +140,45 @@ Install a current Node.js/npm environment, then run from the frontend folder:
 Set-Location frontend
 npm ci
 ```
+
+## Deployment-ready setup
+
+This repository now includes a simple containerized deployment setup for a backend API and a production-built frontend. From the repository root, run:
+
+```powershell
+docker compose up --build
+```
+
+This starts:
+
+- backend API on `http://localhost:8000`
+- frontend on `http://localhost:8080`
+
+The frontend is built in production mode and served by Nginx. The backend runs via Uvicorn. A valid `DR_CHECKPOINT` is still required for live model inference; without it, the app remains available but reports the model as unavailable.
+
+### Deploy the API to Render
+
+The repository includes a Render Blueprint in [render.yaml](render.yaml).
+Create a Render Blueprint from this repository, or configure a Python web
+service manually with:
+
+- Build command: `pip install -r requirements.txt`
+- Start command: `python -m uvicorn src.api.main:app --host 0.0.0.0 --port $PORT`
+- Health check path: `/api/health`
+
+Do not use `python -m uvicorn backend.main:app`; this repository has no
+`backend` package. The FastAPI application is exported as `app` from
+`src/api/main.py`.
+
+Set `DR_CHECKPOINT` to a compatible checkpoint path if the model artifact is
+available to the service. If it is not configured or cannot be loaded, the
+service can start but reports the model as unavailable and rejects analysis
+requests. Configure `DR_CORS_ORIGINS` with the deployed frontend origin when
+hosting the frontend separately. Render's local filesystem is ephemeral by
+default, so the SQLite screening history is not durable across service
+restarts or redeployments unless a persistent disk or external database is
+configured. This prototype has no authentication and should not be deployed
+with identifiable patient data or treated as a clinical service.
 
 ## Run the application
 

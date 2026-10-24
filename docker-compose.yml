@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+    container_name: dr-screening-backend
+    environment:
+      DR_CHECKPOINT: ""
+      DR_HISTORY_DB: "/app/data/screening_history.sqlite3"
+      DR_CORS_ORIGINS: "http://localhost:8080"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: "http://localhost:8000"
+    container_name: dr-screening-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
