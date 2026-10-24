@@ -24,10 +24,6 @@ from starlette.responses import JSONResponse
 
 from src.api.screening_history import ScreeningHistoryStore
 from src.preprocessing.image_pipeline import preprocess_image
-from src.reporting.screening_report import (
-    create_screening_report,
-    write_screening_report,
-)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -88,6 +84,21 @@ def load_model_checkpoint(checkpoint_path: str | Path) -> tuple[Any, Any, Any]:
     from src.dr_classification.classifier import load_model_checkpoint as load_checkpoint
 
     return load_checkpoint(checkpoint_path)
+
+
+def create_screening_report(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    from src.reporting.screening_report import create_screening_report as create_report
+
+    return create_report(*args, **kwargs)
+
+
+def write_screening_report(
+    result: dict[str, Any],
+    output_dir: str | Path,
+) -> dict[str, Path]:
+    from src.reporting.screening_report import write_screening_report as write_report
+
+    return write_report(result, output_dir)
 
 
 def _encode_file(path: Path, media_type: str) -> dict[str, str]:
